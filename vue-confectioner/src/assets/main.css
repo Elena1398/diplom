@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.swiper-button-next,
+.swiper-button-prev {
+  color: gray !important; /* Устанавливаем цвет стрелок на серый */
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  color: darkgray !important; /* Цвет при наведении (по желанию) */
+}
+
+.swiper-pagination-bullet {
+    background-color: #ADADAD !important;
+    opacity: 1 !important;
+}
+
+.swiper-pagination-bullet-active{
+    background: #DFDFDF !important;
+}
+
+
