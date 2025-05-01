@@ -6,9 +6,9 @@ import Catalog from '@/components/Catalog.vue'
 const items = ref([])
 const cart = ref([])
 
-
 const filters = reactive({
   sortBy: 'title',
+  tastesBy: 'tastes',
   searchQuerry: ''
 })
 
@@ -36,7 +36,13 @@ const fetchBaskets = async () => {
 
 const addToBaskets = async (item) => {
   try {
-    const obj = { desertId: item.des_id }
+    const obj = {
+      desertId: item.des_id,
+      finalWeight: item.weight || 0,
+      sumPriceList: item.price, // сюда кладёшь цену
+      quantityDes: 1 // если нет выбора количества — можно 1
+    }
+
     item.isAdded = true
     const { data } = await axios.post('http://localhost:8080/apis/basket', obj)
     item.basketId = data.bas_id
@@ -69,7 +75,12 @@ const onClickAddPlus = async (item) => {
 
 const onChangeSelect = (event) => {
   filters.sortBy = event.target.value
-  fetchItems() // Вызов fetchItems после изменения фильтра
+  fetchItems()
+}
+
+const onChangeTastes = (event) => {
+  filters.tastesBy = event.target.value
+  fetchItems()
 }
 
 const onChangeSearchInput = (event) => {
@@ -120,9 +131,9 @@ const addToFavorite = async (item) => {
 
 const fetchItems = async () => {
   const params = {
-    section: filters.sortBy
+    section: filters.sortBy,
+    tastes: filters.sortBy
   }
-
   if (filters.searchQuerry) {
     params.title = filters.searchQuerry
   }
@@ -158,7 +169,6 @@ const fetchItems = async () => {
   }
 }
 
-
 onMounted(async () => {
   await fetchItems()
   await fetchFavorites()
@@ -192,6 +202,24 @@ provide('addToFavorite', addToFavorite)
           <option value="3">Выпечка</option>
           <option value="4">Печенье</option>
           <option value="5">Кофеты</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label for="filters" class="block mb-4">
+          <a class="text-lg mb-8 p-1 font-mono">Вкусы</a>
+        </label>
+        <select
+          id="filters"
+          @change="onChangeTastes"
+          class="border border-slate-300 rounded-md w-9/12 p-1 outline-none focus:border-gray-400 font-mono"
+        >
+          <option value="tastes">Все вкусы</option>
+          <option value="1">Клубника</option>
+          <option value="2">Манго</option>
+          <option value="3">Шоколад</option>
+          <option value="4">Орехи</option>
+          <option value="5">Малина</option>
+          <option value="6">Кофе</option>
         </select>
       </div>
     </div>

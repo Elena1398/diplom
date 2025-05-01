@@ -1,55 +1,71 @@
 <template>
-  <footer class="bg-gray-700 py-16 mt-40">
-    <div class="container mx-auto">
-      <div class="flex flex-wrap justify-center">
-        <div class="w-full md:w-1/4 px-4 mb-8 flex flex-col items-center text-center">
-          <a class="text-xl uppercase text-white">Valentina Oplachko</a>
-          <p class="text-sm text-slate-400">&copy; кондитерские изделия 2025</p>
+  <footer class="bg-zinc-800 py-16 mt-40 text-white">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-wrap justify-between items-start">
+        <!-- Логотип и копирайт -->
+        <div
+          class="w-full md:w-1/3 px-4 mb-8 md:mb-0 flex flex-col md:text-left items-center text-center"
+        >
+          <router-link class="text-3xl uppercase" to="/des">Valentina Oplachko</router-link>
+          <p class="text-sm text-gray-400 mt-2">&copy; 2025 Кондитерские изделия ручной работы</p>
         </div>
-        <div class="w-full md:w-1/4 px-4 mb-8 flex flex-col items-center text-center">
-          <h4 class="text-white text-lg font-medium mb-8">Обратиться за помощью</h4>
-          <ul class="list-none">
+
+        <!-- Навигация -->
+        <div class="w-full md:w-1/3 px-4 mb-8 md:mb-0 flex flex-col font-mono">
+          <h3 class="text-xl underline mb-4">Навигация</h3>
+          <ul class="space-y-2 pl-2">
             <li>
-              <a
-                href="#"
-                class="text-gray-300 text-base hover:text-white transition-all duration-300"
-                >продукция</a
+              <router-link
+                class="text-gray-300 hover:text-white transition-all duration-300"
+                to="/des"
+                >Каталог
+              </router-link>
+            </li>
+            <li>
+              <router-link
+                class="text-gray-300 hover:text-white transition-all duration-300"
+                to="/aboutThePastryChef"
+                >О кондитере
+              </router-link>
+            </li>
+            <li>
+              <router-link
+                class="text-gray-300 hover:text-white transition-all duration-300"
+                to="/deliveryAndPayment"
+                >Доставка и Оплата</router-link
               >
             </li>
             <li>
-              <a
-                href="#"
-                class="text-gray-300 text-base hover:text-white transition-all duration-300"
-                >доставка и оплата</a
-              >
-            </li>
-            <li>
-              <a
-                href="#"
-                class="text-gray-300 text-base hover:text-white transition-all duration-300"
-                >информация о составе продукции</a
-              >
+              <router-link
+                to="/favourites"
+                class="text-gray-300 hover:text-white transition-all duration-300"
+                >Избранное
+              </router-link>
             </li>
           </ul>
         </div>
-        <div class="w-full md:w-1/4 px-4 mb-8 flex flex-col items-center">
-          <div class="flex justify-center">
-            <a
-              href="#"
-              class="bg-white bg-opacity-20 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-500 mr-2"
-              ><img src="../../public/svg/youtube.png" alt=""></a>
-            <a
-              href="#"
-              class="bg-white bg-opacity-20 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-500 mr-2"
-              ><img src="../../public/svg/instagram.png" alt=""></a>
-            <a
-              href="#"
-              class="bg-white bg-opacity-20 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-500 mr-2"
-              ><img src="../../public/svg/vk.png" alt=""></a>
-            <a
-              href="#"
-              class="bg-white bg-opacity-20 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-500"
-              ><img src="../../public/svg/whatsapp.png" alt=""></a>
+
+        <!-- Контакты -->
+        <div>
+          <h3 class="text-xl underline mb-4">Контакты</h3>
+          <p>г. Кранодар, ул. Казбекская 13</p>
+          <p>+7(918)116-34-32</p>
+          <p>sweet@valentina.by</p>
+
+          <!-- Соцсети -->
+          <div class="flex mt-4 space-x-3">
+            <a href="#" class="hover:scale-110 transition-transform">
+              <img src="../../public/svg/instagram.png" alt="Instagram" class="h-6 w-6" />
+            </a>
+            <a href="#" class="hover:scale-110 transition-transform">
+              <img src="../../public/svg/youtube.png" alt="YouTube" class="h-6 w-6" />
+            </a>
+            <a href="#" class="hover:scale-110 transition-transform">
+              <img src="../../public/svg/vk.png" alt="VK" class="h-6 w-6" />
+            </a>
+            <a href="#" class="hover:scale-110 transition-transform">
+              <img src="../../public/svg/whatsapp.png" alt="WhatsApp" class="h-6 w-6" />
+            </a>
           </div>
         </div>
       </div>

@@ -11,6 +11,15 @@ const props = defineProps({
   onClickFavorite: Function
 })
 
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 0
+  }).format(price)
+}
+
+
 const showFavoriteButton = Boolean(props.onClickFavorite)
 </script>
 
@@ -32,7 +41,7 @@ const showFavoriteButton = Boolean(props.onClickFavorite)
     <div class="flex justify-between mt-5">
       <div class="flex flex-col m-5">
         <span class="text-slate-400">Цена:</span>
-        <b>{{ price }}₽</b>
+        <b>{{ formatPrice(price) }}</b>
       </div>
       <img
         v-if="showFavoriteButton"

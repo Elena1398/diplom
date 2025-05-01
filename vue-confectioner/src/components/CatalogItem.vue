@@ -8,6 +8,8 @@ defineProps({
     default: () => []
   }
 })
+
+
 </script>
 
 <template>
@@ -19,6 +21,7 @@ defineProps({
       :title="item.des_name"
       :price="isNaN(parseFloat(item.price)) ? 0 : parseFloat(item.price)"
       :imageUrl="item.photo"
+      
     />
   </div>
 </template>

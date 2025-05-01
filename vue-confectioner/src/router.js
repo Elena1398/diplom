@@ -63,7 +63,11 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior() {
+    // всегда прокручивает наверх
+    return { top: 0 }
+  }
 })
 
 export default router
