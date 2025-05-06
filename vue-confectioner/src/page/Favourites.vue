@@ -2,6 +2,13 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import Catalog from '@/components/Catalog.vue';
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+
+onMounted(() => {
+  auth.loadUserFromLocalStorage()
+})
 
 const favorites = ref([])
 

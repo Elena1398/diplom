@@ -34,7 +34,7 @@ export default {
       :modules="modules"
       class="mySwiper"
     >
-      <swiper-slide><img src="../../public\tinified\freepik.jpeg" alt="" /></swiper-slide>
+      <swiper-slide><img src="/photo/Mousse_cake_Rocher1.jpg" alt="" /></swiper-slide>
       <swiper-slide><img src="../../public\tinified\freepik2.jpeg" alt="" /></swiper-slide>
       <swiper-slide><img src="../../public\tinified\freepik3.jpeg" alt="" /></swiper-slide>
       <swiper-slide><img src="../../public\tinified\freepik4.jpeg" alt="" /></swiper-slide>
@@ -43,24 +43,14 @@ export default {
 </template>
 
 <style scoped>
-.swiper {
+.mySwiper {
   width: 100%;
-  height: 50%;
-}
-
-.swiper-slide {
-  text-align: center;
-  font-size: 18px;
-  background: #ffffff;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  height: 400px;
 }
 
 .swiper-slide img {
   width: 100%;
-  height: 50%;
+  height: 100%;
   object-fit: cover;
 }
 </style>

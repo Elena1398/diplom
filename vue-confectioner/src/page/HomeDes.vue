@@ -2,6 +2,14 @@
 import { onMounted, ref, watch, reactive, provide } from 'vue'
 import axios from 'axios'
 import Catalog from '@/components/Catalog.vue'
+// import Main from '@/components/Main.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+
+onMounted(() => {
+  auth.loadUserFromLocalStorage()
+})
 
 const items = ref([])
 const cart = ref([])
@@ -132,7 +140,7 @@ const addToFavorite = async (item) => {
 const fetchItems = async () => {
   const params = {
     section: filters.sortBy,
-    tastes: filters.sortBy
+    tastes: filters.tastesBy !== 'tastes' ? filters.tastesBy : undefined
   }
   if (filters.searchQuerry) {
     params.title = filters.searchQuerry
@@ -177,6 +185,8 @@ onMounted(async () => {
 
 watch(() => filters.sortBy, fetchItems)
 watch(() => filters.searchQuerry, fetchItems)
+watch(() => filters.tastesBy, fetchItems)
+
 
 provide('cart', { cart, addToBaskets, removeFromCart, onClickAddPlus })
 
@@ -184,6 +194,9 @@ provide('addToFavorite', addToFavorite)
 </script>
 
 <template>
+  <div class="m-10">
+        <!-- <Main /> -->
+      </div>
   <div class="p-10 flex">
     <div class="w-1/5 pr-4">
       <h2 class="text-3xl mb-8 font-mono">Фильтры</h2>

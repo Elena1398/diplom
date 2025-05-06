@@ -2,6 +2,13 @@
 import { onMounted } from 'vue'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+
+onMounted(() => {
+  auth.loadUserFromLocalStorage()
+})
 
 // Инициализация AOS (анимации)
 onMounted(() => {

@@ -1,14 +1,18 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
+const auth = useAuthStore()
+
+onMounted(() => {
+  auth.loadUserFromLocalStorage() // Загружаем данные пользователя при монтировании компонента
+})
+
+const router = useRouter()
 const login = ref('')
 const passwords = ref('')
-const auth = useAuthStore()
-const router = useRouter()
-
 const handleLogin = async () => {
   try {
     const response = await axios.post('http://localhost:8080/apis/login', {
@@ -16,14 +20,20 @@ const handleLogin = async () => {
       passwords: passwords.value
     })
 
+    const user = response.data.cus
+    localStorage.setItem('customersId', user.cus_id) // Сохраняем ID в localStorage
+
     alert('Авторизация успешна!')
-    auth.setUser(response.data.cus) // сохраняем пользователя в store
-    router.push('/') // редирект на главную
+    auth.setUser(user) // если используешь pinia
+    router.push('/')   // переход на главную
   } catch (error) {
     alert('Ошибка авторизации')
     console.error(error)
   }
 }
+
+
+
 </script>
 
 <template>
@@ -46,7 +56,7 @@ const handleLogin = async () => {
           <label class="font-mono" for="passwords">Пароль:</label>
           <input
             class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-lilac"
-            type="passwords"
+            type="password"
             id="passwords"
             v-model="passwords"
             required

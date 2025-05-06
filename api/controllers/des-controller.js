@@ -25,7 +25,27 @@ class DesControllers {
         );
         return res.json(des.rows);
       }
-
+      if (tastes && tastes !== 'tastes' && (!section || section === 'title')) {
+        const des = await db.query(
+          `SELECT DISTINCT d.des_id, d.des_name, pl.price, d.photo 
+           FROM desserts d 
+           LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id 
+           LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id 
+           JOIN sostav_desserts sd ON sd.des_id = d.des_id 
+           JOIN inredients i ON i.inredients_id = sd.inredients_id 
+           JOIN category_tastes ct ON ct.inredients_id = i.inredients_id 
+           JOIN tastes t ON t.tastes_id = ct.tastes_id 
+           WHERE t.tastes_id = $1
+           AND pl.weight = (
+             SELECT MIN(pl2.weight) 
+             FROM dessert_price_list dpl2 
+             JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id 
+             WHERE dpl2.des_id = d.des_id)
+           ORDER BY d.des_id ASC;`,
+          [tastes]
+        );
+        return res.json(des.rows);
+      }
       if (section === "title") {
         const des = await db.query(
           "SELECT d.des_id, d.des_name, pl.weight, pl.price, d.photo " +
@@ -41,7 +61,30 @@ class DesControllers {
         );
         return res.json(des.rows);
       }
-
+      if (tastes && section && tastes !== 'tastes' && section !== 'title') {
+        const des = await db.query(
+          `SELECT DISTINCT d.des_id, d.des_name, pl.price, d.photo 
+           FROM desserts d 
+           LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id 
+           LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id 
+           JOIN sostav_desserts sd ON sd.des_id = d.des_id 
+           JOIN inredients i ON i.inredients_id = sd.inredients_id 
+           JOIN category_tastes ct ON ct.inredients_id = i.inredients_id 
+           JOIN tastes t ON t.tastes_id = ct.tastes_id 
+           WHERE t.tastes_id = $1 
+           AND d.categ_des_id = $2
+           AND pl.weight = (
+             SELECT MIN(pl2.weight) 
+             FROM dessert_price_list dpl2 
+             JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id 
+             WHERE dpl2.des_id = d.des_id
+           )
+           ORDER BY d.des_id ASC;`,
+          [tastes, section]
+        );
+        return res.json(des.rows);
+      }
+      
       if (section) {
         // Проверяем только наличие section
         const des = await db.query(

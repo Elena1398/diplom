@@ -2,6 +2,13 @@
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
 import CardDessert from '../components/CardDessert.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+
+onMounted(() => {
+  auth.loadUserFromLocalStorage()
+})
 
 const prop = defineProps({
   id: String,

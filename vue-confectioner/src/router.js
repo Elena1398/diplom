@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Header from './components/Header.vue'
 import Login from './components/Login.vue'
+import Profile from './components/Profile.vue'
+import ChangePassword from './components/ChangePassword.vue'
 import Registration from './components/Registration.vue'
 import HomeDes from './page/HomeDes.vue'
 import DecertPage from './page/DecertPage.vue'
@@ -22,6 +24,14 @@ const routes = [
   {
     path: '/registration',
     component: Registration
+  },
+  {
+    path: '/profile',
+    component: Profile
+  },
+  {
+    path: '/change-password',
+    component: ChangePassword
   },
   {
     path: '/desert/:id',

@@ -1,12 +1,20 @@
 <script setup>
 import { useAuthStore } from '@/stores/auth'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const auth = useAuthStore()
 const showDropdown = ref(false)
 
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value
+}
+
+const handleLogout = () => {
+  auth.logout()
+  showDropdown.value = false
+  router.push('/login') // или '/' если вы хотите отправить на главную
 }
 </script>
 
@@ -60,15 +68,18 @@ const toggleDropdown = () => {
 
           <ul
             v-if="showDropdown"
-            class="absolute top-full mt-2 right-0 bg-white border rounded shadow-md w-48 z-50"
+            class="absolute top-full mt-2 right-0 bg-white border rounded rounded-xl shadow-md w-48 z-50 font-mono"
           >
             <li class="px-4 py-2 hover:bg-gray-100">
-              <router-link to="/profile">Редактировать профиль</router-link>
+              <router-link to="/profile">Профиль</router-link>
             </li>
             <li class="px-4 py-2 hover:bg-gray-100">
               <router-link to="/change-password">Сменить пароль</router-link>
             </li>
-            <li class="px-4 py-2 hover:bg-gray-100" @click="auth.logout">Выйти</li>
+            <li class="px-4 py-2 hover:bg-gray-100">
+              <router-link to="">Мои заказы</router-link>
+            </li>
+            <li class="px-4 py-2 hover:bg-gray-100" @click="handleLogout">Выйти</li>
           </ul>
         </li>
 
