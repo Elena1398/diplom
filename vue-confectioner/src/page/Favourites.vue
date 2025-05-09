@@ -1,26 +1,45 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import Catalog from '@/components/Catalog.vue';
+import Catalog from '@/components/Catalog.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
-
-onMounted(() => {
-  auth.loadUserFromLocalStorage()
-})
-
 const favorites = ref([])
 
 onMounted(async () => {
-  try {
-    const { data } = await axios.get('http://localhost:8080/apis/favourites');
-    favorites.value = data;
-  } catch (err) {
-    console.error(err);
+  await auth.loadUserFromLocalStorage()
+
+  if (!auth.isAuthenticated) {
+    // Гость — получаем избранное из localStorage
+    const guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]')
+
+    if (guestFavorites.length === 0) return
+
+    try {
+      const { data } = await axios.get('http://localhost:8080/apis/des')
+      favorites.value = data.filter((item) => guestFavorites.includes(item.des_id))
+    } catch (error) {
+      console.error('Ошибка загрузки избранного для гостя:', error)
+    }
+
+  } else {
+    // Авторизованный пользователь
+    try {
+      const customersId = localStorage.getItem('customersId')
+      if (!customersId) return
+
+      const { data } = await axios.get(
+        `http://localhost:8080/apis/favourites?customersId=${customersId}`
+      )
+      favorites.value = data
+    } catch (err) {
+      console.error('Ошибка загрузки избранного пользователя:', err)
+    }
   }
-}); 
+})
 </script>
+
 
 <template>
   <div class="p-16">

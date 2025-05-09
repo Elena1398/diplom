@@ -18,7 +18,7 @@ const goToLogin = () => {
 }
 
 const baskets = ref([]) // Состояние корзины
-const isAuthenticated = ref(false)
+const isAuthenticated = computed(() => !!auth.user)
 const showModal = ref(false)
 
 

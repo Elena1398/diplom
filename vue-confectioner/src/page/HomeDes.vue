@@ -97,7 +97,10 @@ const onChangeSearchInput = (event) => {
 
 const fetchFavorites = async () => {
   try {
-    const { data: favorites } = await axios.get('http://localhost:8080/apis/favourites')
+    const customersId = localStorage.getItem('customersId')
+    if (!customersId) return
+
+    const { data: favorites } = await axios.get(`http://localhost:8080/apis/favourites?customersId=${customersId}`)
 
     items.value = items.value.map((item) => {
       const favorite = favorites.find((favorite) => favorite.des_id === item.des_id)
@@ -118,10 +121,38 @@ const fetchFavorites = async () => {
 }
 
 const addToFavorite = async (item) => {
+  const customersId = localStorage.getItem('customersId')
+
+  if (!customersId) {
+    // Гостевой пользователь — сохраняем избранное локально
+    let guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]')
+
+    if (!item.isFavorite) {
+      item.isFavorite = true
+      guestFavorites.push(item.des_id)
+    } else {
+      item.isFavorite = false
+      guestFavorites = guestFavorites.filter(id => id !== item.des_id)
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(guestFavorites))
+
+    items.value = items.value.map((des) => {
+      if (des.des_id === item.des_id) {
+        des.isFavorite = item.isFavorite
+      }
+      return des
+    })
+
+    return
+  }
+
+  // Авторизованный пользователь — работаем с сервером
   try {
     if (!item.isFavorite) {
       const obj = {
-        desertId: item.des_id
+        desertId: item.des_id,
+        customersId
       }
 
       item.isFavorite = true
@@ -132,6 +163,14 @@ const addToFavorite = async (item) => {
       await axios.delete('http://localhost:8080/apis/favourite/' + item.favoriteId)
       item.favoriteId = null
     }
+
+    items.value = items.value.map((des) => {
+      if (des.des_id === item.des_id) {
+        des.isFavorite = item.isFavorite
+        des.favoriteId = item.favoriteId
+      }
+      return des
+    })
   } catch (err) {
     console.log(err)
   }
@@ -151,7 +190,7 @@ const fetchItems = async () => {
       params
     })
 
-    // Получаем избранное и корзину заранее
+    // Получаем избранное и корзину
     const [favoritesRes, basketsRes] = await Promise.all([
       axios.get('http://localhost:8080/apis/favourites'),
       axios.get('http://localhost:8080/apis/baskets')
@@ -160,13 +199,16 @@ const fetchItems = async () => {
     const favorites = favoritesRes.data
     const baskets = basketsRes.data
 
+    const guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]')
+
     items.value = data.map((obj) => {
       const isFavorite = favorites.find((fav) => fav.des_id === obj.des_id)
       const inBasket = baskets.find((basket) => basket.des_id === obj.des_id)
+      const isGuestFav = guestFavorites.includes(obj.des_id)
 
       return {
         ...obj,
-        isFavorite: !!isFavorite,
+        isFavorite: !!isFavorite || isGuestFav,
         favoriteId: isFavorite ? isFavorite.favor_id : null,
         isAdded: !!inBasket,
         basketId: inBasket ? inBasket.orders_id : null
@@ -176,6 +218,7 @@ const fetchItems = async () => {
     console.error('Ошибка при получении элементов:', error)
   }
 }
+
 
 onMounted(async () => {
   await fetchItems()

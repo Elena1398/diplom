@@ -28,9 +28,9 @@ const currentQuantity = ref(props.quantity || 1)
 const priceOptions = ref([]) // варианты веса и цен
 const selectedPrice = ref(props.price)
 
-const isCake = computed(() => currentWeight.value >= 500) // пирог или нет
-
-
+const isCake = computed(() => {
+  return props.title.toLowerCase().includes('торт') // или другое ключевое слово
+})
 
 const productQuantitySettings = {
   'Кофеты "Трюфель на молочном шоколаде"': { start: 6, step: 3 },
@@ -53,8 +53,8 @@ const increase = () => {
   hasChanged.value = true
   if (isCake.value) {
     const currentIndex = priceOptions.value.findIndex(
-      (option) => Number(option.weight) === Number(currentWeight.value)
-    )
+    (option) => Number(option.weight) === Number(currentWeight.value)
+  )
     if (currentIndex < priceOptions.value.length - 1) {
       const next = priceOptions.value[currentIndex + 1]
       currentWeight.value = next.weight
@@ -96,9 +96,10 @@ const decrease = () => {
 
 const totalPrice = computed(() => {
   return isCake.value
-    ? selectedPrice.value
+    ? selectedPrice.value // Это вся цена за выбранный вес
     : selectedPrice.value * currentQuantity.value
 })
+
 
 
 

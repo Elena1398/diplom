@@ -1,127 +1,116 @@
 const db = require("../db");
 
 class DesControllers {
-  async getDes(req, res) {
-    try {
-      const section = req.query.section;
-      const searchQuery = req.query.title;
-      const tastes = req.query.tastes;
-      // const sectionPrice = req.query.sectionPrice;
+//   async getDes(req, res) {
+//   try {
+//     const section = req.query.section;
+//     const searchQuery = req.query.title;
+//     const tastes = req.query.tastes;
 
-      if (searchQuery) {
-        const des = await db.query(
-          "SELECT d.des_id, d.des_name, pl.price, d.photo " +
-            "FROM desserts d " +
-            "JOIN dessert_price_list dpl ON dpl.des_id = d.des_id " +
-            "JOIN price_list pl ON pl.price_list_id = dpl.price_list_id " +
-            "WHERE d.des_name ILIKE $1 " +
-            "AND pl.weight = ( " +
-            "SELECT MIN(pl2.weight) " +
-            "FROM dessert_price_list dpl2 " +
-            "JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id " +
-            "WHERE dpl2.des_id = d.des_id) " +
-            "ORDER BY d.des_id ASC;",
-          [`%${searchQuery}%`]
-        );
-        return res.json(des.rows);
-      }
-      if (tastes && tastes !== 'tastes' && (!section || section === 'title')) {
-        const des = await db.query(
-          `SELECT DISTINCT d.des_id, d.des_name, pl.price, d.photo 
-           FROM desserts d 
-           LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id 
-           LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id 
-           JOIN sostav_desserts sd ON sd.des_id = d.des_id 
-           JOIN inredients i ON i.inredients_id = sd.inredients_id 
-           JOIN category_tastes ct ON ct.inredients_id = i.inredients_id 
-           JOIN tastes t ON t.tastes_id = ct.tastes_id 
-           WHERE t.tastes_id = $1
-           AND pl.weight = (
-             SELECT MIN(pl2.weight) 
-             FROM dessert_price_list dpl2 
-             JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id 
-             WHERE dpl2.des_id = d.des_id)
-           ORDER BY d.des_id ASC;`,
-          [tastes]
-        );
-        return res.json(des.rows);
-      }
-      if (section === "title") {
-        const des = await db.query(
-          "SELECT d.des_id, d.des_name, pl.weight, pl.price, d.photo " +
-            "FROM desserts d " +
-            "JOIN dessert_price_list dpl ON dpl.des_id = d.des_id " +
-            "JOIN price_list pl ON pl.price_list_id = dpl.price_list_id " +
-            "WHERE pl.weight = ( " +
-            "SELECT MIN(pl2.weight) " +
-            "FROM dessert_price_list dpl2 " +
-            "JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id " +
-            "WHERE dpl2.des_id = d.des_id) " +
-            "ORDER BY d.des_id ASC"
-        );
-        return res.json(des.rows);
-      }
-      if (tastes && section && tastes !== 'tastes' && section !== 'title') {
-        const des = await db.query(
-          `SELECT DISTINCT d.des_id, d.des_name, pl.price, d.photo 
-           FROM desserts d 
-           LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id 
-           LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id 
-           JOIN sostav_desserts sd ON sd.des_id = d.des_id 
-           JOIN inredients i ON i.inredients_id = sd.inredients_id 
-           JOIN category_tastes ct ON ct.inredients_id = i.inredients_id 
-           JOIN tastes t ON t.tastes_id = ct.tastes_id 
-           WHERE t.tastes_id = $1 
-           AND d.categ_des_id = $2
-           AND pl.weight = (
-             SELECT MIN(pl2.weight) 
-             FROM dessert_price_list dpl2 
-             JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id 
-             WHERE dpl2.des_id = d.des_id
-           )
-           ORDER BY d.des_id ASC;`,
-          [tastes, section]
-        );
-        return res.json(des.rows);
-      }
-      
-      if (section) {
-        // Проверяем только наличие section
-        const des = await db.query(
-          "SELECT d.des_id, d.des_name, pl.price, d.photo " +
-            "FROM desserts d " +
-            "LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id " +
-            "LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id " +
-            "WHERE categ_des_id = $1 " +
-            "AND pl.weight = ( " +
-            "SELECT MIN(pl2.weight) " +
-            "FROM dessert_price_list dpl2 " +
-            "JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id " +
-            "WHERE dpl2.des_id = d.des_id) " +
-            "ORDER BY d.des_id ASC",
-          [section]
-        );
-        return res.json(des.rows);
-      }
+//     let baseQuery = `
+//       SELECT DISTINCT d.des_id, d.des_name, pl.price, d.photo
+//       FROM desserts d
+//       LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id
+//       LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id
+//       LEFT JOIN sostav_desserts sd ON sd.des_id = d.des_id
+//       LEFT JOIN inredients i ON i.inredients_id = sd.inredients_id
+//       LEFT JOIN category_tastes ct ON ct.inredients_id = i.inredients_id
+//       LEFT JOIN tastes t ON t.tastes_id = ct.tastes_id
+//       WHERE pl.weight = (
+//         SELECT MIN(pl2.weight)
+//         FROM dessert_price_list dpl2
+//         JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id
+//         WHERE dpl2.des_id = d.des_id
+//       )
+//     `;
 
-      //   if (sectionPrice) {
-      //     const [minPrice, maxPrice] = sectionPrice.split('-').map(Number); // Преобразуем строку в массив чисел
-      //     const des = await db.query(
-      //       'SELECT d.des_id, d.des_name, cd.weight, cd.price, d.photo ' +
-      //       'FROM characteristics_dessert cd ' +
-      //       'JOIN parameters_des pd ON cd.char_des_id = pd.char_des_id ' +
-      //       'JOIN desserts d ON pd.des_id = d.des_id ' +
-      //       'WHERE cd.price BETWEEN $1 AND $2;',
-      //       [minPrice, maxPrice] // Используем параметры для минимальной и максимальной цены
-      //     );
-      //     return res.json(des.rows);
-      // }
-      return res.json([]); // Возвращаем пустой массив или сообщение
-    } catch (error) {
-      console.error("Error fetching desserts:", error);
-      res.status(500).json({ message: "Internal server error" }); // Обработка ошибок
+//     const params = [];
+//     const conditions = [];
+
+//     if (searchQuery) {
+//       params.push(`%${searchQuery}%`);
+//       conditions.push(`d.des_name ILIKE $${params.length}`);
+//     }
+
+//     if (section && section !== 'title') {
+//       params.push(section);
+//       conditions.push(`d.categ_des_id = $${params.length}`);
+//     }
+
+//     if (tastes && tastes !== 'tastes') {
+//       params.push(tastes);
+//       conditions.push(`t.tastes_id = $${params.length}`);
+//     }
+
+//     if (conditions.length > 0) {
+//       baseQuery += ' AND ' + conditions.join(' AND ');
+//     }
+
+//     baseQuery += ' ORDER BY d.des_id ASC;';
+
+//     const des = await db.query(baseQuery, params);
+//     return res.json(des.rows);
+
+//   } catch (error) {
+//     console.error("Error fetching desserts:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// }
+async getDes(req, res) {
+  try {
+    const section = req.query.section;
+    const searchQuery = req.query.title;
+    const tastes = req.query.tastes;
+
+    let baseQuery = `
+      SELECT DISTINCT d.des_id, d.des_name, pl.price, d.photo
+      FROM desserts d
+      LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id
+      LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id
+      LEFT JOIN sostav_desserts sd ON sd.des_id = d.des_id
+      LEFT JOIN inredients i ON i.inredients_id = sd.inredients_id
+      LEFT JOIN category_tastes ct ON ct.inredients_id = i.inredients_id
+      LEFT JOIN tastes t ON t.tastes_id = ct.tastes_id
+      WHERE pl.weight = (
+        SELECT MIN(pl2.weight)
+        FROM dessert_price_list dpl2
+        JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id
+        WHERE dpl2.des_id = d.des_id
+      )
+    `;
+
+    const params = [];
+    const conditions = [];
+
+    if (searchQuery) {
+      params.push(`%${searchQuery}%`);
+      conditions.push(`d.des_name ILIKE $${params.length}`);
     }
+
+    if (section && section !== 'title') {
+      params.push(section);
+      conditions.push(`d.categ_des_id = $${params.length}`);
+    }
+
+    if (tastes && tastes !== 'tastes') {
+      params.push(tastes);
+      conditions.push(`t.tastes_id = $${params.length}`);
+    }
+
+    if (conditions.length > 0) {
+      baseQuery += ' AND ' + conditions.join(' AND ');
+    }
+
+    baseQuery += ' ORDER BY d.des_id ASC;';
+
+    const des = await db.query(baseQuery, params);
+    return res.json(des.rows);
+
+  } catch (error) {
+    console.error("Error fetching desserts:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
+}
 
   async getDesert(req, res) {
     try {
@@ -163,40 +152,86 @@ class DesControllers {
     }
   }
 
-  async getFavorites(req, res) {
-    try {
-      // в дальнейшем нужен будет еще id клиента
-      const favouritesDes = await db.query(
-        "SELECT  f.favor_id, f.des_id, d.des_name, pl.weight, pl.price, d.photo " +
-          "FROM favourites f " +
-          "LEFT JOIN desserts d ON d.des_id = f.des_id " +
-          "LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id " +
-          "LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id " +
-          "WHERE pl.weight = ( " +
-          "SELECT MIN(pl2.weight) " +
-          "FROM dessert_price_list dpl2 " +
-          "JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id " +
-          "WHERE dpl2.des_id = d.des_id) " +
-          "ORDER BY f.favor_id ASC; "
-      );
-      return res.json(favouritesDes.rows);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving desserts", error });
-    }
-  }
+  // async getFavorites(req, res) {
+  //   try {
+  //     // в дальнейшем нужен будет еще id клиента
+  //     const favouritesDes = await db.query(
+  //       "SELECT  f.favor_id, f.des_id, d.des_name, pl.weight, pl.price, d.photo " +
+  //         "FROM favourites f " +
+  //         "LEFT JOIN desserts d ON d.des_id = f.des_id " +
+  //         "LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id " +
+  //         "LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id " +
+  //         "WHERE pl.weight = ( " +
+  //         "SELECT MIN(pl2.weight) " +
+  //         "FROM dessert_price_list dpl2 " +
+  //         "JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id " +
+  //         "WHERE dpl2.des_id = d.des_id) " +
+  //         "ORDER BY f.favor_id ASC; "
+  //     );
+  //     return res.json(favouritesDes.rows);
+  //   } catch (error) {
+  //     res.status(500).json({ message: "Error retrieving desserts", error });
+  //   }
+  // }
 
-  async addFavorites(req, res) {
-    try {
-      const { desertId } = req.body;
-      const newFavor = await db.query(
-        "INSERT INTO public.favourites(des_id) " + "VALUES ($1) RETURNING *",
-        [desertId]
-      );
-      return res.json(newFavor.rows[0]);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving desert", error });
-    }
+async getFavorites(req, res) { 
+  try {
+    const rawId = req.query.customersId; // 🔧 это нужно было добавить
+    const customersId = rawId && !isNaN(rawId) ? parseInt(rawId) : null;
+
+    const hasCustomerId = customersId !== null;
+
+    const query = `
+      SELECT f.favor_id, f.des_id, d.des_name, pl.weight, pl.price, d.photo
+      FROM favourites f
+      LEFT JOIN desserts d ON d.des_id = f.des_id
+      LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id
+      LEFT JOIN price_list pl ON pl.price_list_id = dpl.price_list_id
+      WHERE pl.weight = (
+        SELECT MIN(pl2.weight)
+        FROM dessert_price_list dpl2
+        JOIN price_list pl2 ON pl2.price_list_id = dpl2.price_list_id
+        WHERE dpl2.des_id = d.des_id
+      )
+      ${hasCustomerId ? 'AND f.cus_id = $1' : 'AND f.cus_id IS NULL'}
+      ORDER BY f.favor_id ASC;
+    `;
+
+    const result = await db.query(query, hasCustomerId ? [customersId] : []);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Ошибка при получении избранного:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
   }
+}
+
+async addFavorites(req, res) {
+  try {
+    const { desertId, customersId } = req.body;
+
+    // Проверяем, есть ли уже такая запись
+    const existing = await db.query(
+      "SELECT * FROM favourites WHERE des_id = $1 AND cus_id = $2",
+      [desertId, customersId]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ message: "Десерт уже в избранном" });
+    }
+
+    // Добавляем, если не было
+    const newFavor = await db.query(
+      "INSERT INTO public.favourites(des_id, cus_id) VALUES ($1, $2) RETURNING *",
+      [desertId, customersId]
+    );
+
+    return res.status(201).json(newFavor.rows[0]);
+  } catch (error) {
+    console.error("Ошибка при добавлении в избранное:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+}
+
 
   async deleteFavorites(req, res) {
     try {

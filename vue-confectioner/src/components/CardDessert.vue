@@ -151,7 +151,10 @@ const decreaseWeight = () => {
       console.log('No more weight options available to decrease')
     }
   } else {
-    quantity.value -= productSettings.value.step
+    const min = productSettings.value.start
+    if (quantity.value > min) {
+      quantity.value -= productSettings.value.step
+    }
   }
 }
 
@@ -233,7 +236,6 @@ watch(quantity, async (newQuantity) => {
     }
   }
 })
-
 </script>
 
 <template>

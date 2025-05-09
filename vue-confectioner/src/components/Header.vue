@@ -68,7 +68,7 @@ const handleLogout = () => {
 
           <ul
             v-if="showDropdown"
-            class="absolute top-full mt-2 right-0 bg-white border rounded rounded-xl shadow-md w-48 z-50 font-mono"
+            class="absolute top-full mt-2 right-30 bg-white border rounded rounded-xl shadow-md w-48 z-50 font-mono"
           >
             <li class="px-4 py-2 hover:bg-gray-100">
               <router-link to="/profile">Профиль</router-link>
