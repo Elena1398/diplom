@@ -1,55 +1,34 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { onMounted } from 'vue'
 import Catalog from '@/components/Catalog.vue'
-import { useAuthStore } from '@/stores/auth'
+import { useFavoritesStore } from '@/stores/favorites'
 
-const auth = useAuthStore()
-const favorites = ref([])
+const favStore = useFavoritesStore()
 
-onMounted(async () => {
-  await auth.loadUserFromLocalStorage()
-
-  if (!auth.isAuthenticated) {
-    // Гость — получаем избранное из localStorage
-    const guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]')
-
-    if (guestFavorites.length === 0) return
-
-    try {
-      const { data } = await axios.get('http://localhost:8080/apis/des')
-      favorites.value = data.filter((item) => guestFavorites.includes(item.des_id))
-    } catch (error) {
-      console.error('Ошибка загрузки избранного для гостя:', error)
-    }
-
-  } else {
-    // Авторизованный пользователь
-    try {
-      const customersId = localStorage.getItem('customersId')
-      if (!customersId) return
-
-      const { data } = await axios.get(
-        `http://localhost:8080/apis/favourites?customersId=${customersId}`
-      )
-      favorites.value = data
-    } catch (err) {
-      console.error('Ошибка загрузки избранного пользователя:', err)
-    }
-  }
+onMounted(() => {
+  favStore.loadFavorites()
 })
 </script>
-
 
 <template>
   <div class="p-16">
     <h2 class="text-3xl mb-8 font-mono">Избранное</h2>
-    <div v-if="favorites.length === 0" class="flex flex-col items-center text-lg text-gray-600 m-48">
-        <img src="../../public/svg/cake.png" alt="cake" class="mb-4" />
-        <a class="text-3xl font-mono"  for="username">Закладки отсутствуют</a>
-        <p class="font-mono text-slate-400"  for="username">Выбирете себя что-нибудь вкусное для хорошего настроения</p>
+
+    <div
+      v-if="favStore.favorites.isRemoving"
+      class="flex flex-col items-center text-lg text-gray-600 m-48"
+    >
+      <img src="../../public/icons/cake.png" alt="cake" class="mb-4" />
+      <a class="text-3xl font-mono">Закладки отсутствуют</a>
+      <p class="font-mono text-slate-400">Выберите что-нибудь вкусное для хорошего настроения</p>
     </div>
-    <Catalog :items="favorites" is-favorites />
+
+    <Catalog
+      v-auto-animate
+      :items="favStore.favorites"
+      is-favorites
+      @add-to-favorite="favStore.toggleFavorite"
+      @add-to-card="favStore.toggleCartInFavorites"
+    />
   </div>
 </template>
-

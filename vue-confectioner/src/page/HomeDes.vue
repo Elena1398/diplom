@@ -294,7 +294,7 @@ provide('addToFavorite', addToFavorite)
       </div>
       <!-- Условная отрисовка -->
       <div v-if="items.length === 0" class="flex flex-col items-center text-lg text-gray-600 m-48">
-        <img src="../../public/svg/cake.png" alt="cake" class="mb-4" />
+        <img src="../../public/icons/cake.png" alt="cake" class="mb-4" />
         <a class="text-3xl font-mono" for="username">К сожалению, этой категории пока нет.</a>
       </div>
       <Catalog

@@ -1,6 +1,6 @@
 <script setup>
 import { useAuthStore } from '@/stores/auth'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -16,19 +16,24 @@ const handleLogout = () => {
   showDropdown.value = false
   router.push('/login') // или '/' если вы хотите отправить на главную
 }
+
+onMounted(() => {
+  auth.loadUserFromLocalStorage()
+})
 </script>
 
 <template>
   <header class="flex justify-between border-b border-slate-300 px-10 py-8">
     <router-link to="/des"
-      ><div class="flex items-center gap-4">
+      ><div class="flex items-center">
+        <img class="w-32" src="../../public/icons/vo.png" alt="">
         <a class="text-xl uppercase"
           >Valentina Oplachko
           <p class="text-sm text-slate-400">Кондитерские изделия</p>
         </a>
       </div></router-link
     >
-    <nav class="flex items-center">
+    <nav class="flex items-center ">
       <ul class="flex items-center gap-10 gap-15">
         <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/des">Каталог</router-link>
@@ -79,7 +84,7 @@ const handleLogout = () => {
             <li class="px-4 py-2 hover:bg-gray-100">
               <router-link to="">Мои заказы</router-link>
             </li>
-            <li class="px-4 py-2 hover:bg-gray-100" @click="handleLogout">Выйти</li>
+            <li class="px-4 py-2 text-purple-600 hover:bg-gray-100" @click="handleLogout">Выйти</li>
           </ul>
         </li>
 

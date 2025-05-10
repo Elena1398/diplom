@@ -150,7 +150,7 @@ const removeFromCart = async (basketId) => {
           <button
             :disabled="!totalPrice"
             @click="handleOrderClick"
-            class="text-white w-full bg-lilac disabled:bg-slate-300 rounded-xl py-4 mt-4 transition cursor-pointer"
+            class="text-white w-full bg-lilac disabled:bg-slate-300 rounded-xl py-4 mt-4 transition cursor-pointer hover:bg-purple-600 active:scale-90 transition-transform duration-300"
           >
             Перейти к оформлению
           </button>

@@ -27,7 +27,7 @@ export default {
             },
             {
               iconLayout: 'default#image',
-              iconImageHref: '../../public/svg/map/marker2-map.png', // Путь к иконке маркера
+              iconImageHref: '../../public/map/marker2-map.png', // Путь к иконке маркера
               iconImageSize: [45, 45],
               iconImageOffset: [-20, -45] // Смещение иконки относительно точки
             }
@@ -105,7 +105,7 @@ export default {
 }
 
 [class*="balloon__close-button"] {
-    background: url('../../public/svg/map/cross.svg') 50% no-repeat !important;
+    background: url('../../public/map/cross.svg') 50% no-repeat !important;
     width: 15px !important;
     height: 15px !important;
     margin: 10px 7px;

@@ -282,7 +282,7 @@ watch(quantity, async (newQuantity) => {
       </div>
       <div class="flex items-center mt-5 ml-1 space-x-2">
         <button
-          class="border border-slate-300 rounded-lg p-2 font-mono text-center bg-gray-500 text-white hover:bg-gray-400 active:scale-90 transition-transform duration-300"
+          class="border border-slate-300 rounded-lg p-2 w-32 bg-lilac font-mono text-center bg-gray-500 text-white hover:bg-purple-600 active:scale-90 transition-transform duration-300"
           @click="decreaseWeight"
         >
           -
@@ -293,7 +293,7 @@ watch(quantity, async (newQuantity) => {
         </div>
 
         <button
-          class="border border-slate-300 rounded-lg p-2 font-mono text-center bg-gray-500 text-white hover:bg-gray-400 active:scale-90 transition-transform duration-300"
+          class="border border-slate-300 rounded-lg p-2 w-32 bg-lilac font-mono text-center bg-gray-500 text-white hover:bg-purple-600 active:scale-90 transition-transform duration-300"
           @click="increaseWeight"
         >
           +
@@ -305,7 +305,7 @@ watch(quantity, async (newQuantity) => {
       <div class="flex items-center mt-5 space-x-4">
         <button
           @click="addOrRemoveFromCart"
-          class="border border-slate-300 rounded-lg p-2 font-mono text-center"
+          class="border border-slate-300 rounded-lg p-2 bg-lilac w-auto size-min text-center font-mono text-white hover:bg-purple-600 active:scale-90 transition"
         >
           {{ isAdded ? 'Удалить из корзины' : 'Добавить в корзину' }}
         </button>
@@ -321,17 +321,3 @@ watch(quantity, async (newQuantity) => {
   </div>
 </template>
 
-<style scoped>
-button {
-  width: auto;
-  min-width: 100px;
-  background-color: #a69dab;
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-button:hover {
-  background-color: #979598;
-}
-</style>

@@ -55,16 +55,16 @@
           <!-- Соцсети -->
           <div class="flex mt-4 space-x-3">
             <a href="#" class="hover:scale-110 transition-transform">
-              <img src="../../public/svg/instagram.png" alt="Instagram" class="h-6 w-6" />
+              <img src="../../public/icons/instagram.png" alt="Instagram" class="h-6 w-6" />
             </a>
             <a href="#" class="hover:scale-110 transition-transform">
-              <img src="../../public/svg/youtube.png" alt="YouTube" class="h-6 w-6" />
+              <img src="../../public/icons/youtube.png" alt="YouTube" class="h-6 w-6" />
             </a>
             <a href="#" class="hover:scale-110 transition-transform">
-              <img src="../../public/svg/vk.png" alt="VK" class="h-6 w-6" />
+              <img src="../../public/icons/vk.png" alt="VK" class="h-6 w-6" />
             </a>
             <a href="#" class="hover:scale-110 transition-transform">
-              <img src="../../public/svg/whatsapp.png" alt="WhatsApp" class="h-6 w-6" />
+              <img src="../../public/icons/whatsapp.png" alt="WhatsApp" class="h-6 w-6" />
             </a>
           </div>
         </div>

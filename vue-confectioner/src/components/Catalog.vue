@@ -22,8 +22,8 @@ const emit = defineEmits(['addToFavorite', 'addToCard'])
         :weight="item.weight"
         :price="isNaN(parseFloat(item.price)) ? 0 : parseFloat(item.price)"
         :imageUrl="item.photo"
-        :onClickFavorite="isFavorites ? null : () => emit('addToFavorite', item)"
-        :onClickAdd="isFavorites ? null : () => emit('addToCard', item)"
+        :onClickFavorite="() => emit('addToFavorite', item)"
+        :onClickAdd="() => emit('addToCard', item)"
         :isFavorite="item.isFavorite"
         :isAdded="item.isAdded"
       />

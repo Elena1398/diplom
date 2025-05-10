@@ -28,9 +28,7 @@ const currentQuantity = ref(props.quantity || 1)
 const priceOptions = ref([]) // варианты веса и цен
 const selectedPrice = ref(props.price)
 
-const isCake = computed(() => {
-  return props.title.toLowerCase().includes('торт') // или другое ключевое слово
-})
+const isCake = computed(() => currentWeight.value >= 500)
 
 const productQuantitySettings = {
   'Кофеты "Трюфель на молочном шоколаде"': { start: 6, step: 3 },
