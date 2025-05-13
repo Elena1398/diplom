@@ -1,39 +1,36 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import { onMounted, computed, ref } from 'vue'
 import CatalogItem from '@/components/CardItem.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/baskets'
 
+// Сторы
+const BasStore = useCartStore()
 const auth = useAuthStore()
-
-onMounted(() => {
-  auth.loadUserFromLocalStorage()
-})
-
 const router = useRouter()
 
-const goToLogin = () => {
-  router.push('/login')
-}
-
-const baskets = ref([]) // Состояние корзины
-const isAuthenticated = computed(() => !!auth.user)
+// Модальное окно
 const showModal = ref(false)
 
+// Загрузка корзины и пользователя
+onMounted(() => {
+  auth.loadUserFromLocalStorage()
+  BasStore.loadCart()
+})
 
+// Используем только данные из стора
+const baskets = computed(() => BasStore.baskets)
+const isAuthenticated = computed(() => !!auth.user)
+const hasBasket = computed(() => baskets.value.length > 0)
 
 const totalPrice = computed(() =>
   baskets.value.reduce((acc, item) => acc + Number(item.sum_price_list), 0)
 )
 
-const vatPrice = computed(() => {
-  return Math.round(totalPrice.value * 0.15)
-})
+const vatPrice = computed(() => Math.round(totalPrice.value * 0.15))
 
-const totalBeforeDiscount = computed(() => {
-  return totalPrice.value - vatPrice.value
-})
+const totalBeforeDiscount = computed(() => totalPrice.value - vatPrice.value)
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('ru-RU', {
@@ -48,47 +45,12 @@ const handleOrderClick = () => {
     showModal.value = true
     return
   }
+  // Здесь можешь добавить переход к оформлению
 }
 
-onMounted(() => {
-  const user = localStorage.getItem('customers')
-  isAuthenticated.value = !!user
-})
-
-const updateItem = async ({ basketId, weight, quantity, price }) => {
-  try {
-    const item = baskets.value.find((item) => item.bas_id === basketId)
-    if (!item) return
-
-    // Вычисляем сумму: пирог — price, конфеты — price * quantity
-    const newSumPrice = weight > 0 ? price : price * quantity
-
-    // Обновляем на сервере
-    await axios.post(`http://localhost:8080/apis/baskets/update`, {
-      basketId,
-      finalWeight: weight,
-      quantityDes: quantity,
-      sumPriceList: newSumPrice
-    })
-
-    // Локальное обновление — важно, иначе computed не обновится
-    item.final_weight = weight
-    item.quantity_des = quantity
-    item.sum_price_list = newSumPrice
-  } catch (error) {
-    console.error('Ошибка обновления товара в корзине:', error)
-  }
+const goToLogin = () => {
+  router.push('/login')
 }
-
-onMounted(async () => {
-  try {
-    const { data } = await axios.get('http://localhost:8080/apis/baskets')
-    console.log('Загруженные данные корзины:', data)
-    baskets.value = data
-  } catch (err) {
-    console.error('Ошибка загрузки корзины:', err)
-  }
-})
 
 const getItemPrice = (item) => {
   if (!item) return 0
@@ -96,19 +58,13 @@ const getItemPrice = (item) => {
   const weight = Number(item.final_weight)
   const sum = Number(item.sum_price_list)
 
-  if (weight > 0) return sum // пирог — цена уже точная
+  if (weight > 0) return sum
   if (quantity > 0) return sum / quantity
   return 0
 }
 
-const removeFromCart = async (basketId) => {
-  try {
-    await axios.delete(`http://localhost:8080/apis/basket/${basketId}`)
-    baskets.value = baskets.value.filter((item) => item.bas_id !== basketId)
-  } catch (error) {
-    console.error('Ошибка при удалении товара:', error)
-  }
-}
+const removeFromCart = BasStore.removeFromCart
+const updateItem = BasStore.updateCartItem
 </script>
 
 <template>
@@ -116,6 +72,14 @@ const removeFromCart = async (basketId) => {
     <div class="flex">
       <div class="w-1/2 pr-4 mb-5">
         <h2 class="text-3xl mb-8 font-mono">Корзина</h2>
+        <div
+      v-if="!hasBasket"
+      class="flex flex-col items-center text-lg text-gray-600 m-48"
+    >
+      <img src="../../public/icons/cake.png" alt="cake" class="mb-4" />
+      <a class="text-3xl font-mono">Корзина пуста</a>
+      <p class="font-mono text-slate-400">Отправляйтесь за покупками</p>
+    </div>
         <CatalogItem
           v-for="item in baskets"
           :key="item.bas_id"
@@ -164,7 +128,9 @@ const removeFromCart = async (basketId) => {
               <h3 class="text-xl font-bold mb-4 flex items-center justify-center">
                 Требуется авторизация
               </h3>
-              <p class="mb-6">Чтобы оформить заказ, пожалуйста, войдите в аккаунт или зарегистрируйтесь.</p>
+              <p class="mb-6">
+                Чтобы оформить заказ, пожалуйста, войдите в аккаунт или зарегистрируйтесь.
+              </p>
               <div class="flex justify-end gap-4">
                 <button
                   @click="showModal = false"
@@ -176,7 +142,8 @@ const removeFromCart = async (basketId) => {
                   @click="goToLogin"
                   class="px-4 py-2 rounded-xl bg-lilac text-white hover:bg-purple-700"
                 >
-                Войти</button>
+                  Войти
+                </button>
               </div>
             </div>
           </div>

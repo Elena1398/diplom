@@ -20,21 +20,54 @@ const filters = reactive({
   searchQuerry: ''
 })
 
+// const fetchBaskets = async () => {
+//   try {
+//     const { data: baskets } = await axios.get('http://localhost:8080/apis/baskets')
+
+//     items.value = items.value.map((item) => {
+//       const basket = baskets.find((basket) => basket.des_id === item.des_id)
+
+//       if (!basket) {
+//         return item
+//       }
+
+//       return {
+//         ...item,
+//         isAdded: true,
+//         basketId: basket.bas_id
+//       }
+//     })
+//   } catch (error) {
+//     console.log(error)
+//   }
+// }
+
 const fetchBaskets = async () => {
-  try {
-    const { data: baskets } = await axios.get('http://localhost:8080/apis/baskets')
+  const customersId = localStorage.getItem('customersId')
 
+  if (!customersId) {
+    // Гость
+    const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
     items.value = items.value.map((item) => {
-      const basket = baskets.find((basket) => basket.des_id === item.des_id)
-
-      if (!basket) {
-        return item
-      }
-
+      const isInGuestCart = guestCart.some(g => g.des_id === item.des_id)
       return {
         ...item,
-        isAdded: true,
-        basketId: basket.bas_id
+        isAdded: isInGuestCart,
+        basketId: null
+      }
+    })
+    return
+  }
+
+  // Авторизованный
+  try {
+    const { data: baskets } = await axios.get(`http://localhost:8080/apis/baskets?customersId=${customersId}`)
+    items.value = items.value.map((item) => {
+      const basket = baskets.find((basket) => basket.des_id === item.des_id)
+      return {
+        ...item,
+        isAdded: !!basket,
+        basketId: basket ? basket.bas_id : null
       }
     })
   } catch (error) {
@@ -42,13 +75,47 @@ const fetchBaskets = async () => {
   }
 }
 
+// const addToBaskets = async (item) => {
+//   try {
+//     const obj = {
+//       desertId: item.des_id,
+//       finalWeight: item.weight || 0,
+//       sumPriceList: item.price, // сюда кладёшь цену
+//       quantityDes: 1 // если нет выбора количества — можно 1
+//     }
+
+//     item.isAdded = true
+//     const { data } = await axios.post('http://localhost:8080/apis/basket', obj)
+//     item.basketId = data.bas_id
+//   } catch (error) {
+//     console.log(error)
+//   }
+// }
+
 const addToBaskets = async (item) => {
+  const customersId = localStorage.getItem('customersId')
+
+  if (!customersId) {
+    // Гостевая корзина
+    let guestBaskets = JSON.parse(localStorage.getItem('cart') || '[]')
+
+    if (!item.isAdded) {
+      item.isAdded = true
+      guestBaskets.push(item.des_id)
+    }
+
+    localStorage.setItem('cart', JSON.stringify(guestBaskets))
+    return
+  }
+
+  // Авторизованный пользователь
   try {
     const obj = {
       desertId: item.des_id,
       finalWeight: item.weight || 0,
-      sumPriceList: item.price, // сюда кладёшь цену
-      quantityDes: 1 // если нет выбора количества — можно 1
+      sumPriceList: item.price,
+      quantityDes: 1,
+      customersId: Number(customersId) // ✅ Обязательно передаём
     }
 
     item.isAdded = true
@@ -59,7 +126,29 @@ const addToBaskets = async (item) => {
   }
 }
 
+// const removeFromCart = async (item) => {
+//   try {
+//     item.isAdded = false
+//     await axios.delete('http://localhost:8080/apis/basket/' + item.basketId)
+//     item.basketId = null
+//   } catch (error) {
+//     console.log(error)
+//   }
+// }
 const removeFromCart = async (item) => {
+  const customersId = localStorage.getItem('customersId')
+
+  if (!customersId) {
+    // Гостевая корзина
+    let guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
+    guestCart = guestCart.filter(i => i.des_id !== item.des_id)
+    localStorage.setItem('guestCart', JSON.stringify(guestCart))
+
+    item.isAdded = false
+    return
+  }
+
+  // Авторизованный
   try {
     item.isAdded = false
     await axios.delete('http://localhost:8080/apis/basket/' + item.basketId)
@@ -95,84 +184,86 @@ const onChangeSearchInput = (event) => {
   filters.searchQuerry = event.target.value
 }
 
+
 const fetchFavorites = async () => {
   try {
-    const customersId = localStorage.getItem('customersId')
-    if (!customersId) return
+    const customersId = localStorage.getItem('customersId');
+    let favorites = [];
 
-    const { data: favorites } = await axios.get(`http://localhost:8080/apis/favourites?customersId=${customersId}`)
+    if (customersId) {
+      const { data } = await axios.get(`http://localhost:8080/apis/favourites?customersId=${customersId}`);
+      favorites = data;
+    } else {
+      favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    }
 
-    items.value = items.value.map((item) => {
-      const favorite = favorites.find((favorite) => favorite.des_id === item.des_id)
+    // ✅ Универсальное определение Set
+    const favoriteIds = new Set(
+      Array.isArray(favorites)
+        ? (typeof favorites[0] === 'object'
+            ? favorites.map(f => f.des_id)
+            : favorites)
+        : []
+    );
 
-      if (!favorite) {
-        return item
-      }
-
-      return {
-        ...item,
-        isFavorite: true,
-        favoriteId: favorite.favor_id
-      }
-    })
+    // ✅ Обновляем список элементов
+    items.value = items.value.map(item => ({
+      ...item,
+      isFavorite: favoriteIds.has(item.des_id)
+    }));
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-}
+};
+
 
 const addToFavorite = async (item) => {
-  const customersId = localStorage.getItem('customersId')
+  const customersId = localStorage.getItem('customersId');
 
   if (!customersId) {
-    // Гостевой пользователь — сохраняем избранное локально
-    let guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]')
+    // Гостевой пользователь — обновляем избранное локально
+    let guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
     if (!item.isFavorite) {
-      item.isFavorite = true
-      guestFavorites.push(item.des_id)
+      guestFavorites.push(item.des_id);
+      item.isFavorite = true;
     } else {
-      item.isFavorite = false
-      guestFavorites = guestFavorites.filter(id => id !== item.des_id)
+      guestFavorites = guestFavorites.filter(id => id !== item.des_id);
+      item.isFavorite = false;
     }
 
-    localStorage.setItem('favorites', JSON.stringify(guestFavorites))
-
-    items.value = items.value.map((des) => {
-      if (des.des_id === item.des_id) {
-        des.isFavorite = item.isFavorite
-      }
-      return des
-    })
-
-    return
+    localStorage.setItem('favorites', JSON.stringify(guestFavorites));
   }
 
-  // Авторизованный пользователь — работаем с сервером
-  try {
-    if (!item.isFavorite) {
-      const obj = {
-        desertId: item.des_id,
-        customersId
+  // Логика для авторизованных пользователей
+  else {
+    try {
+      if (!item.isFavorite) {
+        const obj = {
+          desertId: item.des_id,
+          customersId
+        };
+
+        item.isFavorite = true;
+        const { data } = await axios.post('http://localhost:8080/apis/favourite', obj);
+        item.favoriteId = data.favor_id;
+      } else {
+        item.isFavorite = false;
+        await axios.delete('http://localhost:8080/apis/favourite/' + item.favoriteId);
+        item.favoriteId = null;
       }
 
-      item.isFavorite = true
-      const { data } = await axios.post('http://localhost:8080/apis/favourite', obj)
-      item.favoriteId = data.favor_id
-    } else {
-      item.isFavorite = false
-      await axios.delete('http://localhost:8080/apis/favourite/' + item.favoriteId)
-      item.favoriteId = null
+      // Обновляем данные на сервере
+      items.value = items.value.map((des) => {
+        if (des.des_id === item.des_id) {
+          des.isFavorite = item.isFavorite;
+          des.favoriteId = item.favoriteId;
+        }
+        return des;
+      });
+    } catch (err) {
+      console.log(err);
     }
-
-    items.value = items.value.map((des) => {
-      if (des.des_id === item.des_id) {
-        des.isFavorite = item.isFavorite
-        des.favoriteId = item.favoriteId
-      }
-      return des
-    })
-  } catch (err) {
-    console.log(err)
   }
 }
 
@@ -186,15 +277,19 @@ const fetchItems = async () => {
   }
 
   try {
+    console.log('🟡 Загружаю десерты...')
     const { data } = await axios.get('http://localhost:8080/apis/des', {
       params
     })
+    console.log('✅ Десерты загружены:', data)
 
-    // Получаем избранное и корзину
+    // Тут потенциальная проблема
+    console.log('🟡 Загружаю избранное и корзину...')
     const [favoritesRes, basketsRes] = await Promise.all([
       axios.get('http://localhost:8080/apis/favourites'),
       axios.get('http://localhost:8080/apis/baskets')
     ])
+    console.log('✅ Избранное и корзина загружены')
 
     const favorites = favoritesRes.data
     const baskets = basketsRes.data
@@ -215,7 +310,7 @@ const fetchItems = async () => {
       }
     })
   } catch (error) {
-    console.error('Ошибка при получении элементов:', error)
+    console.error('❌ Ошибка при получении элементов:', error)
   }
 }
 

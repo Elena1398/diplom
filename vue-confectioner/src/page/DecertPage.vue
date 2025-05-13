@@ -5,36 +5,15 @@ import CardDessert from '../components/CardDessert.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
+const customersId = localStorage.getItem('customersId')
 
-onMounted(() => {
-  auth.loadUserFromLocalStorage()
-})
-
-const prop = defineProps({
+const props = defineProps({
   id: String,
   isFavorites: Boolean
 })
-console.log(prop.id)
 
 const cardDes = ref(null)
-
-onMounted(async () => {
-  try {
-    const response = await axios.get('http://localhost:8080/apis/desert/' + prop.id)
-    const dessert = response.data
-
-    // Проверим, в избранном ли этот десерт
-    const { data: favorites } = await axios.get('http://localhost:8080/apis/favourites')
-    const found = favorites.find((f) => f.des_id === dessert.des_id)
-
-    dessert.isFavorite = !!found
-    if (found) dessert.favoriteId = found.favor_id
-
-    cardDes.value = normalizeDessert(dessert);
-  } catch (error) {
-    console.error('Ошибка при загрузке десерта:', error)
-  }
-})
+const isLoading = ref(true)
 
 const normalizeDessert = (dessert) => {
   return {
@@ -53,12 +32,12 @@ const toNumber = (value) => {
   return isNaN(num) ? 0 : num
 }
 
-
 const toggleFavorite = async (item) => {
   try {
     if (!item.isFavorite) {
       const obj = {
-        desertId: item.des_id
+        desertId: item.des_id,
+        customersId: customersId
       }
 
       item.isFavorite = true
@@ -70,14 +49,43 @@ const toggleFavorite = async (item) => {
       item.favoriteId = null
     }
   } catch (err) {
-    console.log(err)
+    console.error('Ошибка при работе с избранным:', err)
   }
 }
+
+onMounted(async () => {
+  auth.loadUserFromLocalStorage()
+  try {
+    const response = await axios.get('http://localhost:8080/apis/desert/' + props.id)
+    const dessert = response.data
+
+    // === Загружаем избранное ===
+    const { data: favorites } = await axios.get('http://localhost:8080/apis/favourites')
+    const foundFavorite = favorites.find((f) => f.des_id === dessert.des_id)
+    dessert.isFavorite = !!foundFavorite
+    if (foundFavorite) dessert.favoriteId = foundFavorite.favor_id
+
+    // === Загружаем корзину ===
+    const { data: baskets } = await axios.get('http://localhost:8080/apis/baskets')
+    const foundBasket = baskets.find((b) => b.des_id === dessert.des_id)
+    dessert.isAdded = !!foundBasket
+    if (foundBasket) dessert.basketId = foundBasket.bas_id
+
+    cardDes.value = normalizeDessert(dessert)
+  } catch (error) {
+    console.error('Ошибка при загрузке десерта:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
+
 </script>
 
 <template>
+  <div v-if="isLoading" class="text-center py-10 text-gray-500">Загрузка десерта...</div>
+
   <CardDessert
-    v-if="cardDes"
+    v-else-if="cardDes"
     :code="cardDes.des_id"
     :imageUrl="cardDes.photo"
     :title="cardDes.des_name"
@@ -87,8 +95,8 @@ const toggleFavorite = async (item) => {
     :protein="cardDes.protein"
     :fast="cardDes.fast"
     :carbohydrates="cardDes.carbohydrates"
-    :calories="isNaN(parseFloat(cardDes.calories)) ? 0 : parseFloat(cardDes.calories)"
-    :price="isNaN(parseFloat(cardDes.price)) ? 0 : parseFloat(cardDes.price)"
+    :calories="cardDes.calories"
+    :price="cardDes.price"
     :isFavorite="cardDes.isFavorite"
     :onClickFavorite="() => toggleFavorite(cardDes)"
   />

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import Catalog from '@/components/Catalog.vue'
 import { useFavoritesStore } from '@/stores/favorites'
 
@@ -8,6 +8,10 @@ const favStore = useFavoritesStore()
 onMounted(() => {
   favStore.loadFavorites()
 })
+
+const hasFavorites = computed(() => {
+  return favStore.favorites.length > 0
+})
 </script>
 
 <template>
@@ -15,7 +19,7 @@ onMounted(() => {
     <h2 class="text-3xl mb-8 font-mono">Избранное</h2>
 
     <div
-      v-if="favStore.favorites.isRemoving"
+      v-if="!hasFavorites"
       class="flex flex-col items-center text-lg text-gray-600 m-48"
     >
       <img src="../../public/icons/cake.png" alt="cake" class="mb-4" />
