@@ -15,13 +15,17 @@ export const useFavoritesStore = defineStore('favorites', () => {
       if (!guestFavorites.length) return
 
       const res = await axios.get('http://localhost:8080/apis/des')
-      data = res.data.filter((d) => guestFavorites.includes(d.des_id)).map((d) => ({
-        ...d,
-        isFavorite: true,
-        favoriteId: null
-      }))
+      data = res.data
+        .filter((d) => guestFavorites.includes(d.des_id))
+        .map((d) => ({
+          ...d,
+          isFavorite: true,
+          favoriteId: null
+        }))
     } else {
-      const res = await axios.get(`http://localhost:8080/apis/favourites?customersId=${customersId}`)
+      const res = await axios.get(
+        `http://localhost:8080/apis/favourites?customersId=${customersId}`
+      )
       data = res.data.map((d) => ({
         ...d,
         isFavorite: true,
@@ -30,7 +34,9 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
 
     // Загружаем корзину и проставляем флаги
-    const { data: baskets } = await axios.get('http://localhost:8080/apis/baskets')
+    const { data: baskets } = await axios.get(
+      `http://localhost:8080/apis/baskets?customersId=${customersId}`
+    )
     favorites.value = data.map((dessert) => {
       const basketItem = baskets.find((b) => b.des_id === dessert.des_id)
       return {
@@ -72,7 +78,6 @@ export const useFavoritesStore = defineStore('favorites', () => {
         console.warn('favoriteId не найден — невозможно удалить с сервера')
         return
       }
-
       await axios.delete('http://localhost:8080/apis/favourite/' + item.favoriteId)
       item.isFavorite = false
       item.isRemoving = true
@@ -84,33 +89,70 @@ export const useFavoritesStore = defineStore('favorites', () => {
   }
 
   const toggleCartInFavorites = async (item) => {
-    if (!item.isAdded) {
-      const obj = {
-        desertId: item.des_id,
-        finalWeight: item.weight || 0,
-        sumPriceList: item.price,
-        quantityDes: 1
+    const customersId = localStorage.getItem('customersId')
+
+    if (!customersId) {
+      // Гость
+      let guestCart = JSON.parse(localStorage.getItem('baskets') || '[]')
+
+      if (!item.isAdded) {
+        item.isAdded = true
+        guestCart.push(item.des_id)
+      } else {
+        item.isAdded = false
+        guestCart = guestCart.filter((id) => id !== item.des_id)
       }
 
-      const { data } = await axios.post('http://localhost:8080/apis/basket', obj)
-      item.isAdded = true
-      item.basketId = data.bas_id
-    } else {
-      await axios.delete('http://localhost:8080/apis/basket/' + item.basketId)
-      item.isAdded = false
-      item.basketId = null
+      localStorage.setItem('baskets', JSON.stringify(guestCart))
+
+      // Обновление состояния в favorites (если список реактивный)
+      favorites.value = favorites.value.map((fav) =>
+        fav.des_id === item.des_id ? { ...fav, isAdded: item.isAdded } : fav
+      )
+      return
     }
 
-    // Обновляем объект в списке избранного
-    favorites.value = favorites.value.map((fav) =>
-      fav.des_id === item.des_id ? { ...fav, ...item } : fav
-    )
+    // Авторизованный пользователь
+    try {
+      if (!item.isAdded) {
+        const obj = {
+          desertId: item.des_id,
+          finalWeight: item.weight || 0,
+          sumPriceList: item.price,
+          quantityDes: 1,
+          customersId: Number(customersId)
+        }
+
+        const { data } = await axios.post('http://localhost:8080/apis/basket', obj)
+        item.isAdded = true
+        item.basketId = data.bas_id
+      } else {
+        await axios.delete('http://localhost:8080/apis/basket/' + item.basketId)
+        item.isAdded = false
+        item.basketId = null
+      }
+
+      // Обновление состояния
+      favorites.value = favorites.value.map((fav) =>
+        fav.des_id === item.des_id
+          ? { ...fav, isAdded: item.isAdded, basketId: item.basketId }
+          : fav
+      )
+    } catch (error) {
+      console.error('Ошибка toggleCartInFavorites:', error)
+    }
+  }
+
+  const clearFavorites = () => {
+    favorites.value = []
+    localStorage.removeItem('favorites') // удаляем и локальное хранилище для гостя
   }
 
   return {
     favorites,
     loadFavorites,
     toggleFavorite,
-    toggleCartInFavorites
+    toggleCartInFavorites,
+    clearFavorites
   }
 })

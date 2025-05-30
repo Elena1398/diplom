@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
+import { useCartStore } from '@/stores/baskets'
+const cartStore = useCartStore()
 
 const props = defineProps({
   code: Number,
@@ -21,8 +23,36 @@ const props = defineProps({
 })
 
 const priceOptions = ref([])
-const selectedWeight = ref(props.weight)
-const selectedPrice = ref(props.price)
+const selectedWeight = ref(props.weight || 0)
+
+watch(
+  () => props.weight,
+  (newWeight) => {
+    selectedWeight.value = newWeight || 0
+  }
+)
+
+watch(selectedWeight, async (newWeight) => {
+  if (localIsAdded.value && localBasketId.value && isCake.value) {
+    try {
+      const updatedItem = {
+        desertId: props.code,
+        finalWeight: newWeight,
+        quantityDes: 0,
+        sumPriceList: selectedPrice.value
+      }
+      await axios.put(
+        `http://localhost:8080/apis/baskets/update/${localBasketId.value}`,
+        updatedItem
+      )
+    } catch (error) {
+      console.error('Ошибка при обновлении корзины (вес):', error)
+    }
+  }
+})
+
+const selectedPrice = ref(props.price || 0)
+
 const quantity = ref(1)
 const localIsAdded = ref(props.isAdded || false)
 const localBasketId = ref(props.basketId || null)
@@ -65,8 +95,18 @@ const fetchPriceOptions = async () => {
     const { data } = await axios.get(`http://localhost:8080/apis/desserts/${props.code}/prices`)
     priceOptions.value = data
 
-    if (data.length > 0) {
-      selectedWeight.value = data[0].weight
+    if (isCake.value && data.length > 0) {
+      const match = data.find((option) => Number(option.weight) === Number(selectedWeight.value))
+      if (match) {
+        selectedPrice.value = match.price
+        selectedWeight.value = match.weight
+      } else {
+        // Устанавливаем начальный вес = первый доступный (напр. 1 кг)
+        const first = data[0]
+        selectedPrice.value = first.price
+        selectedWeight.value = first.weight
+      }
+    } else if (!isCake.value && data.length > 0) {
       selectedPrice.value = data[0].price
     }
   } catch (error) {
@@ -109,6 +149,35 @@ const decreaseWeight = () => {
 
 const addOrRemoveFromCart = async () => {
   console.log('addOrRemoveFromCart вызвана')
+
+  if (!customersId) {
+    // === Гость ===
+    const item = {
+      des_id: props.code,
+      weight: isCake.value ? selectedWeight.value : 0,
+      quantity: isCake.value ? 0 : quantity.value,
+      price: isCake.value ? selectedPrice.value : selectedPrice.value * quantity.value,
+      isAdded: localIsAdded.value,
+      basketId: localBasketId.value
+    }
+
+    await cartStore.toggleCartItem(item)
+
+    // Обновим локальные состояния
+    localIsAdded.value = !localIsAdded.value
+
+    // Найди новый basketId, если был добавлен
+    if (localIsAdded.value) {
+      const updated = cartStore.baskets.find((b) => b.des_id === props.code)
+      localBasketId.value = updated?.basketId || null
+      localIsAdded.value = true
+    } else {
+      localIsAdded.value = false
+      localBasketId.value = null
+    }
+  }
+
+  // === Авторизованный пользователь ===
   if (!localIsAdded.value) {
     try {
       const obj = {
@@ -126,19 +195,14 @@ const addOrRemoveFromCart = async () => {
       console.error('Ошибка при добавлении в корзину:', error)
     }
   } else {
-    if (localIsAdded.value) {
-      try {
-        if (localBasketId.value) {
-          const response = await axios.delete(
-            `http://localhost:8080/apis/basket/${localBasketId.value}`
-          )
-          console.log('Ответ сервера: ', response)
-          localIsAdded.value = false
-          localBasketId.value = null
-        }
-      } catch (error) {
-        console.error('Ошибка при удалении из корзины:', error)
+    try {
+      if (localBasketId.value) {
+        await axios.delete(`http://localhost:8080/apis/basket/${localBasketId.value}`)
+        localIsAdded.value = false
+        localBasketId.value = null
       }
+    } catch (error) {
+      console.error('Ошибка при удалении из корзины:', error)
     }
   }
 }
@@ -186,6 +250,22 @@ const toggleFavorite = async () => {
 onMounted(async () => {
   await fetchPriceOptions()
 
+  // Загружаем состояние из localStorage
+  const itemKey = `cart-item-${props.code}`
+  const saved = localStorage.getItem(itemKey)
+
+  if (saved) {
+    const parsed = JSON.parse(saved)
+    if (parsed.weight) {
+      selectedWeight.value = parsed.weight
+    }
+    if (parsed.quantity) {
+      quantity.value = parsed.quantity
+    }
+    if (parsed.price) {
+      selectedPrice.value = parsed.price
+    }
+  }
   if (customersId) {
     // Проверка корзины
     const { data: baskets } = await axios.get(
@@ -203,31 +283,86 @@ onMounted(async () => {
     )
     localIsFavorite.value = favs.some((f) => f.des_id === props.code)
   } else {
-    const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
+    const guestCart = JSON.parse(localStorage.getItem('baskets') || '[]')
     const guestFav = JSON.parse(localStorage.getItem('favorites') || '[]')
-    localIsAdded.value = guestCart.includes(props.code)
+    localIsAdded.value = guestCart.some((item) => item.code === props.code)
     localIsFavorite.value = guestFav.includes(props.code)
   }
+  await cartStore.loadCart() 
 })
 
-watch(quantity, async (newQuantity) => {
-  if (localIsAdded.value && localBasketId.value && !isCake.value) {
+// watch(quantity, async (newQuantity) => {
+//   if (localIsAdded.value && localBasketId.value && !isCake.value) {
+//     try {
+//       const updatedItem = {
+//         desertId: props.code,
+//         finalWeight: props.weight,
+//         quantityDes: newQuantity,
+//         sumPriceList: selectedPrice.value * newQuantity
+//       }
+//       await axios.put(
+//         `http://localhost:8080/apis/baskets/update/${localBasketId.value}`,
+//         updatedItem
+//       )
+//     } catch (error) {
+//       console.error('Ошибка при обновлении корзины (количество):', error)
+//     }
+//   }
+// })
+
+watch([quantity, selectedWeight], async ([newQuantity, newWeight]) => {
+  const itemKey = `cart-item-${props.code}`
+
+  // Сохраняем в localStorage
+  localStorage.setItem(
+    itemKey,
+    JSON.stringify({
+      weight: newWeight,
+      quantity: newQuantity,
+      price: selectedPrice.value
+    })
+  )
+
+  // Обновляем корзину
+  if (localIsAdded.value && localBasketId.value) {
     try {
-      const updatedItem = {
-        desertId: props.code,
-        finalWeight: 0,
-        quantityDes: newQuantity,
-        sumPriceList: selectedPrice.value * newQuantity
+      if (customersId) {
+        // Авторизованный — обновление на сервер
+        const updatedItem = {
+          desertId: props.code,
+          finalWeight: isCake.value ? newWeight : 0,
+          quantityDes: isCake.value ? 0 : newQuantity,
+          sumPriceList: isCake.value
+            ? selectedPrice.value
+            : selectedPrice.value * newQuantity
+        }
+
+        await axios.put(
+          `http://localhost:8080/apis/baskets/update/${localBasketId.value}`,
+          updatedItem
+        )
+      } else {
+        // Гость — обновляем корзину локально
+        await cartStore.loadCart() // Перечитать данные из localStorage → обновится UI
       }
-      await axios.put(
-        `http://localhost:8080/apis/baskets/update/${localBasketId.value}`,
-        updatedItem
-      )
     } catch (error) {
-      console.error('Ошибка при обновлении корзины (количество):', error)
+      console.error('Ошибка при обновлении корзины:', error)
     }
   }
 })
+
+
+watch(
+  () => cartStore.baskets,
+  (newBaskets) => {
+    const matched = newBaskets.find((b) => b.des_id === props.code)
+    localIsAdded.value = !!matched
+    localBasketId.value = matched?.basketId || null
+  },
+  { deep: true }
+)
+
+
 </script>
 
 <template>

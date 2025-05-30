@@ -38,9 +38,9 @@ onMounted(() => {
         <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/des">Каталог</router-link>
         </li>
-        <li class="hover:text-slate-500 cursor-pointer">
+        <!-- <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/aboutThePastryChef">О кондитере</router-link>
-        </li>
+        </li> -->
         <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/deliveryAndPayment">Доставка и Оплата</router-link>
         </li>

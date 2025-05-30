@@ -21,13 +21,13 @@
                 >Каталог
               </router-link>
             </li>
-            <li>
+            <!-- <li>
               <router-link
                 class="text-gray-300 hover:text-white transition-all duration-300"
                 to="/aboutThePastryChef"
                 >О кондитере
               </router-link>
-            </li>
+            </li> -->
             <li>
               <router-link
                 class="text-gray-300 hover:text-white transition-all duration-300"

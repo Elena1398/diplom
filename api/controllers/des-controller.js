@@ -171,11 +171,19 @@ class DesControllers {
     try {
       const rawId = req.query.customersId;
       const customersId = rawId && !isNaN(rawId) ? parseInt(rawId) : null;
-
+      
       const hasCustomerId = customersId !== null;
-
       const query = `
-      SELECT bas.bas_id, bas.des_id, d.des_name, pl.weight, pl.price, d.photo
+      SELECT 
+      bas.bas_id, 
+      bas.des_id, 
+      bas.quantity_des, 
+      bas.final_weight, 
+      bas.sum_price_list,
+      d.des_name, 
+      pl.weight, 
+      pl.price, 
+      d.photo
       FROM baskets bas
       LEFT JOIN desserts d ON d.des_id = bas.des_id
       LEFT JOIN dessert_price_list dpl ON dpl.des_id = d.des_id
@@ -188,7 +196,8 @@ class DesControllers {
       )
       ${hasCustomerId ? "AND bas.cus_id = $1" : "AND bas.cus_id IS NULL"}
       ORDER BY bas.bas_id ASC;
-    `;
+      `;
+      console.log("Ответ с сервера baskets:", res.data);
 
       const result = await db.query(query, hasCustomerId ? [customersId] : []);
       return res.json(result.rows);
@@ -202,7 +211,7 @@ class DesControllers {
     try {
       const { desertId, finalWeight, sumPriceList, quantityDes, customersId } =
         req.body;
-        
+
       const newBask = await db.query(
         `INSERT INTO baskets (des_id, final_weight, sum_price_list, quantity_des, cus_id)
        VALUES ($1, $2, $3, $4, $5)

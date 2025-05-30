@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { useCartStore } from './baskets'
+import { useFavoritesStore } from './favorites'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -46,6 +48,10 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('customersId', cleanData.cus_id)
       localStorage.setItem('user', JSON.stringify(cleanData))
 
+      // ⬇️ Очищаем гостевую корзину
+      localStorage.removeItem('baskets')
+      localStorage.removeItem('favorites')
+
       await this.mergeGuestFavorites()
     },
 
@@ -54,6 +60,8 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       localStorage.removeItem('customersId')
       localStorage.removeItem('user')
+      useCartStore().clearCart()
+      useFavoritesStore().clearFavorites()
     },
 
     async loadUserFromLocalStorage() {
@@ -78,7 +86,10 @@ export const useAuthStore = defineStore('auth', {
             const sanitized = this.sanitizeUserData(data)
             await this.setUser(sanitized)
           } catch (error) {
-            console.error('❌ Не удалось загрузить данные пользователя:', error.response?.data || error.message)
+            console.error(
+              '❌ Не удалось загрузить данные пользователя:',
+              error.response?.data || error.message
+            )
           }
         } else {
           console.warn('⚠️ Некорректный или слишком большой customersId:', customersId)
@@ -102,11 +113,11 @@ export const useAuthStore = defineStore('auth', {
           `http://localhost:8080/apis/favourites?customersId=${customersId}`
         )
 
-        const serverIds = serverFavorites.map(f => f.des_id)
-        const toAdd = guestFavorites.filter(id => !serverIds.includes(id))
+        const serverIds = serverFavorites.map((f) => f.des_id)
+        const toAdd = guestFavorites.filter((id) => !serverIds.includes(id))
 
         await Promise.all(
-          toAdd.map(desertId =>
+          toAdd.map((desertId) =>
             axios.post('http://localhost:8080/apis/favourite', {
               desertId,
               customersId

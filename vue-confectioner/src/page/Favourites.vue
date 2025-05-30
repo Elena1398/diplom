@@ -2,16 +2,32 @@
 import { onMounted, computed } from 'vue'
 import Catalog from '@/components/Catalog.vue'
 import { useFavoritesStore } from '@/stores/favorites'
+import { useCartStore } from '@/stores/baskets'
+
+// Сторы
+const BasStore = useCartStore()
 
 const favStore = useFavoritesStore()
-
-onMounted(() => {
-  favStore.loadFavorites()
-})
 
 const hasFavorites = computed(() => {
   return favStore.favorites.length > 0
 })
+
+onMounted(async () => {
+  await favStore.loadFavorites()
+  await BasStore.loadCart()
+
+  favStore.favorites = favStore.favorites.map(fav => {
+    const inCart = BasStore.baskets.find(b => b.des_id === fav.des_id)
+    return {
+      ...fav,
+      isAdded: !!inCart,
+      basketId: inCart?.basketId || null
+    }
+  })
+})
+
+
 </script>
 
 <template>

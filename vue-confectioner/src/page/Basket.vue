@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import CatalogItem from '@/components/CardItem.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -24,9 +24,7 @@ const baskets = computed(() => BasStore.baskets)
 const isAuthenticated = computed(() => !!auth.user)
 const hasBasket = computed(() => baskets.value.length > 0)
 
-const totalPrice = computed(() =>
-  baskets.value.reduce((acc, item) => acc + Number(item.sum_price_list), 0)
-)
+const totalPrice = computed(() => baskets.value.reduce((acc, item) => acc + getItemPrice(item), 0))
 
 const vatPrice = computed(() => Math.round(totalPrice.value * 0.15))
 
@@ -52,19 +50,31 @@ const goToLogin = () => {
   router.push('/login')
 }
 
-const getItemPrice = (item) => {
-  if (!item) return 0
-  const quantity = Number(item.quantity_des)
-  const weight = Number(item.final_weight)
-  const sum = Number(item.sum_price_list)
-
-  if (weight > 0) return sum
-  if (quantity > 0) return sum / quantity
-  return 0
-}
+const getItemPrice = (item) => Number(item.sum_price_list) || 0
 
 const removeFromCart = BasStore.removeFromCart
-const updateItem = BasStore.updateCartItem
+const updateCartItemsBulk = BasStore.updateCartItemsBulk
+
+watch(baskets, (newVal) => {
+  console.log('Текущее содержимое baskets:')
+  newVal.forEach((item) => {
+    console.log({
+      title: item.des_name,
+      sum_price_list: item.sum_price_list,
+      quantity_des: item.quantity_des,
+      final_weight: item.final_weight,
+      type_weight: typeof item.final_weight
+    })
+  })
+})
+
+onMounted(async () => {
+  if (auth.user || localStorage.getItem('customersId')) {
+    await BasStore.loadCart()
+  } else {
+    BasStore.clearCart()
+  }
+})
 </script>
 
 <template>
@@ -72,27 +82,33 @@ const updateItem = BasStore.updateCartItem
     <div class="flex">
       <div class="w-1/2 pr-4 mb-5">
         <h2 class="text-3xl mb-8 font-mono">Корзина</h2>
-        <div
-      v-if="!hasBasket"
-      class="flex flex-col items-center text-lg text-gray-600 m-48"
-    >
-      <img src="../../public/icons/cake.png" alt="cake" class="mb-4" />
-      <a class="text-3xl font-mono">Корзина пуста</a>
-      <p class="font-mono text-slate-400">Отправляйтесь за покупками</p>
-    </div>
-        <CatalogItem
-          v-for="item in baskets"
-          :key="item.bas_id"
-          :code="item.des_id"
-          :title="item.des_name"
-          :price="getItemPrice(item)"
-          :imageUrl="item.photo"
-          :basketId="item.bas_id"
-          :weight="Number(item.final_weight)"
-          :quantity="item.quantity_des"
-          @remove-item="removeFromCart"
-          @update-item="updateItem"
-        />
+        <div v-if="!hasBasket" class="flex flex-col items-center text-lg text-gray-600 m-48">
+          <img src="../../public/icons/cake.png" alt="cake" class="mb-4" />
+          <a class="text-3xl font-mono">Корзина пуста</a>
+          <p class="font-mono text-slate-400">Отправляйтесь за покупками</p>
+        </div>
+        <div v-else>
+          <CatalogItem
+            v-for="item in baskets"
+            :key="item.bas_id"
+            :code="item.des_id"
+            :title="item.des_name"
+            :price="getItemPrice(item)"
+            :imageUrl="item.photo"
+            :basketId="item.bas_id"
+            :weight="Number(item.final_weight) || 1000"
+            :quantity="Number(item.quantity_des) || 1"
+            :isFromCart="true"
+            @remove-item="removeFromCart"
+            @update-item="
+              (item) => {
+                item.sum_price_list = item.weight > 0 ? item.price : item.price * item.quantity
+
+                updateCartItemsBulk([item])
+              }
+            "
+          />
+        </div>
       </div>
       <div class="flex flex-col gap-5 p-16 w-2/4 pr-4 my-6">
         <div class="flex gap-2">
