@@ -10,6 +10,11 @@ router.post('/registration', UsControllers.registrationUser);
 router.get('/customer/:id', UsControllers.getcocustomersId);
 router.put('/customer/:id', UsControllers.updateUser);
 router.post('/change-password', UsControllers.changePassword)
+router.post('/create-order', UsControllers.createOrder)
+router.get('/my-orders/:id', UsControllers.getOrdersByCustomer)
+
+
+
 
 router.get('/des', DesControllers.getDes)
 router.get('/desert/:id', DesControllers.getDesert)
@@ -25,6 +30,7 @@ router.post('/basket', DesControllers.addBasket)
 router.post('/baskets/update', DesControllers.updateBasket)
 router.put('/baskets/update/:id', DesControllers.updateBasketId);
 router.delete('/basket/:id', DesControllers.deleteBasket)
+router.post("/baskets/clear", UsControllers.clearBasketByCustomer);
 
 
 module.exports = router

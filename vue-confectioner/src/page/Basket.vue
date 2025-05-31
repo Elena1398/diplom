@@ -43,7 +43,7 @@ const handleOrderClick = () => {
     showModal.value = true
     return
   }
-  // Здесь можешь добавить переход к оформлению
+  router.push('/checkout') 
 }
 
 const goToLogin = () => {
@@ -75,6 +75,8 @@ onMounted(async () => {
     BasStore.clearCart()
   }
 })
+
+
 </script>
 
 <template>

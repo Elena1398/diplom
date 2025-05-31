@@ -4,13 +4,15 @@ import Login from './components/Login.vue'
 import Profile from './components/Profile.vue'
 import ChangePassword from './components/ChangePassword.vue'
 import Registration from './components/Registration.vue'
+import AboutThePastryChef from '@/components/AboutThePastryChef.vue'
 import HomeDes from './page/HomeDes.vue'
 import DecertPage from './page/DecertPage.vue'
 import Favourites from '@/page/Favourites.vue'
 import Basket from '@/page/Basket.vue'
+import Checkout from '@/components/Checkout.vue'
+import OrderSuccess from '@/components/OrderSuccess.vue'
 import DeliveryAndPayment from '@/components/DeliveryAndPayment.vue'
-import AboutThePastryChef from '@/components/AboutThePastryChef.vue'
-
+import MyOrders from '@/components/MyOrders.vue'
 
 const routes = [
   {
@@ -34,6 +36,10 @@ const routes = [
     component: ChangePassword
   },
   {
+    path: '/myOrders',
+    component: MyOrders
+  },
+  {
     path: '/desert/:id',
     name: 'DecertPage',
     component: DecertPage,
@@ -50,6 +56,16 @@ const routes = [
     name: 'Basket',
     component: Basket,
     props: true
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: Checkout
+  },
+  {
+    path: '/order-success',
+    name: 'OrderSuccess',
+    component: OrderSuccess
   },
   {
     path: '/deliveryAndPayment',
@@ -69,7 +85,6 @@ const routes = [
     props: true
   }
 ]
-
 
 const router = createRouter({
   history: createWebHistory(),
