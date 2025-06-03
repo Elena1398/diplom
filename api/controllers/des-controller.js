@@ -96,6 +96,16 @@ class DesControllers {
     }
   }
 
+  async getPriceList(req, res) {
+    try {
+      const result = await db.query("SELECT * FROM price_list");
+      res.json(result.rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Ошибка получения прайс-листа" });
+    }
+  }
+
   async getFavorites(req, res) {
     try {
       const rawId = req.query.customersId; // 🔧 это нужно было добавить
@@ -171,7 +181,7 @@ class DesControllers {
     try {
       const rawId = req.query.customersId;
       const customersId = rawId && !isNaN(rawId) ? parseInt(rawId) : null;
-      
+
       const hasCustomerId = customersId !== null;
       const query = `
       SELECT 
@@ -275,6 +285,148 @@ class DesControllers {
       return res.json(BaskDel.rows[0]);
     } catch (error) {
       res.status(500).json({ message: "Error retrieving desert", error });
+    }
+  }
+
+  async addDessert(req, res) {
+    try {
+      const {
+        title,
+        categoryId,
+        protein,
+        fast,
+        carbohydrates,
+        calories,
+        description,
+        weight,
+        price,
+        structure,
+        tasteId,
+      } = req.body;
+
+      const des_name = title?.trim();
+      const existingDessert = await db.query(
+        `SELECT des_id FROM desserts WHERE des_name = $1`,
+        [des_name]
+      );
+
+      if (existingDessert.rows.length > 0) {
+        return res.status(409).json({
+          message: "Десерт с таким названием уже существует",
+        });
+      }
+
+      const categ_des_id = Number(categoryId);
+      const tastes_id = Number(tasteId);
+
+      let photo = req.body.photo || "";
+      if (photo) {
+        photo = `..\\..\\photo\\${photo}`;
+      }
+
+      const getOrCreateId = async (table, column, value, idColumn) => {
+        if (typeof value !== "string" || !value.trim()) return null;
+        const trimmed = value.trim();
+        const existing = await db.query(
+          `SELECT ${idColumn} FROM ${table} WHERE ${column} = $1`,
+          [trimmed]
+        );
+        if (existing.rows.length > 0) return existing.rows[0][idColumn];
+        const inserted = await db.query(
+          `INSERT INTO ${table} (${column}) VALUES ($1) RETURNING ${idColumn}`,
+          [trimmed]
+        );
+        return inserted.rows[0][idColumn];
+      };
+
+      const nutValResult = await db.query(
+        `INSERT INTO nutritional_value (protein, fast, carbohydrates, calories)
+       VALUES ($1, $2, $3, $4) RETURNING nut_val_id`,
+        [protein, fast, carbohydrates, calories]
+      );
+      const nut_val_id = nutValResult.rows[0].nut_val_id;
+
+      const dessertResult = await db.query(
+        `INSERT INTO desserts (des_name, categ_des_id, nut_val_id, photo, description)
+       VALUES ($1, $2, $3, $4, $5) RETURNING des_id`,
+        [des_name, categ_des_id, nut_val_id, photo, description]
+      );
+      const des_id = dessertResult.rows[0].des_id;
+
+      // Выбор набора из price_list по весу 1.0 или 2.0
+      let weightGroup = null;
+      if (Number(weight) === 1.0) {
+        weightGroup = [1, 2, 3, 4, 5, 6, 7];
+      } else if (Number(weight) === 2.0) {
+        weightGroup = [9, 10, 11, 12, 13];
+      }
+
+      if (weightGroup) {
+        for (const price_list_id of weightGroup) {
+          await db.query(
+            `INSERT INTO dessert_price_list (des_id, price_list_id)
+       VALUES ($1, $2)`,
+            [des_id, price_list_id]
+          );
+        }
+      } else {
+        return res
+          .status(400)
+          .json({ message: "Неподдерживаемый вес для категории Торт" });
+      }
+
+      const ingredients = [
+        ...new Set(
+          (structure || "")
+            .split(",")
+            .map((el) => el.trim())
+            .filter((el) => el.length > 0)
+        ),
+      ];
+
+      const tasteKeywords = [
+        "клубника",
+        "манго",
+        "шоколад",
+        "орехи",
+        "малина",
+        "кофе",
+      ];
+
+      for (let ingName of ingredients) {
+        const inredients_id = await getOrCreateId(
+          "inredients",
+          "inredient_name",
+          ingName,
+          "inredients_id"
+        );
+
+        await db.query(
+          `INSERT INTO sostav_desserts (des_id, inredients_id)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [des_id, inredients_id]
+        );
+
+        const matchesTaste = tasteKeywords.some((taste) =>
+          ingName.toLowerCase().includes(taste)
+        );
+
+        if (tastes_id && matchesTaste) {
+          await db.query(
+            `INSERT INTO category_tastes (tastes_id, inredients_id)
+           VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [tastes_id, inredients_id]
+          );
+        }
+      }
+
+      res.status(201).json({ message: "Десерт успешно добавлен", des_id });
+    } catch (error) {
+      console.error("Ошибка при добавлении десерта:", error);
+      res.status(500).json({
+        message: "Ошибка на сервере",
+        details: error.message,
+      });
     }
   }
 }

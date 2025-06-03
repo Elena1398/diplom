@@ -10,31 +10,31 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAuthenticated: (state) => !!state.cus_id
+    isAuthenticated: (state) => !!state.user && !!state.user.role
   },
 
   actions: {
     sanitizeUserData(userData) {
-      if (!userData || userData.cus_id === undefined) {
-        // Если данных нет или они некорректны, очищаем их из localStorage
-        console.warn('❌ userData отсутствует или не содержит cus_id. Очистка данных.')
-        localStorage.removeItem('user')
-        localStorage.removeItem('customersId')
-        throw new Error('❌ userData отсутствует или не содержит cus_id')
+      if (!userData) {
+        throw new Error('userData не определён')
       }
 
-      const parsedId = Number(userData.cus_id)
-      if (!Number.isInteger(parsedId)) {
-        // Если cus_id не валидный, удаляем данные
-        console.warn('❌ userData.cus_id не является валидным числом. Очистка данных.')
+      const id = userData.cus_id ?? userData.admin_id
+
+      if (!id) {
         localStorage.removeItem('user')
         localStorage.removeItem('customersId')
-        throw new Error('❌ userData.cus_id не является валидным числом')
+        localStorage.removeItem('role')
+        throw new Error('userData не содержит ID')
       }
+
+      const role = userData.role ?? (userData.admin_id ? 'admin' : 'customer')
 
       return {
         ...userData,
-        cus_id: parsedId // перезаписываем числом
+        cus_id: userData.cus_id ?? null,
+        admin_id: userData.admin_id ?? null,
+        role
       }
     },
 
@@ -46,6 +46,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = cleanData
 
       localStorage.setItem('customersId', cleanData.cus_id)
+      localStorage.setItem('role', cleanData.role)
       localStorage.setItem('user', JSON.stringify(cleanData))
 
       // ⬇️ Очищаем гостевую корзину

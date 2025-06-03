@@ -5,7 +5,8 @@ import Cart from '@/components/Card.vue'
 const props = defineProps({
   items: Array,
   onChangeSearchInput: Function,
-  isFavorites: Boolean
+  isFavorites: Boolean,
+  userRole: String
 })
 
 const emit = defineEmits(['addToFavorite', 'addToCard'])
@@ -26,6 +27,7 @@ const emit = defineEmits(['addToFavorite', 'addToCard'])
         :onClickAdd="() => emit('addToCard', item)"
         :isFavorite="item.isFavorite"
         :isAdded="item.isAdded"
+        :user-role="userRole"
       />
     </div>
   </div>

@@ -41,9 +41,8 @@ export const useCartStore = defineStore('cart', () => {
           const weight = saved.weight || 0
           const quantity = saved.quantity || 1
           const price = saved.price || Number(d.price) || 0
-         const isCake = d.title?.toLowerCase().includes('торт')
-const sum_price_list = isCake ? price : price * quantity
-
+          const isCake = d.title?.toLowerCase().includes('торт')
+          const sum_price_list = isCake ? price : price * quantity
 
           return normalizeItem(
             {
@@ -200,6 +199,39 @@ const sum_price_list = isCake ? price : price * quantity
     localStorage.removeItem('cart') // удаляем и локальное хранилище для гостя
   }
 
+  const mergeGuestCartToUser = async () => {
+    const customersId = localStorage.getItem('customersId')
+    if (!customersId) return // если нет пользователя - ничего не делаем
+
+    const guestBaskets = JSON.parse(localStorage.getItem('baskets') || '[]')
+    if (guestBaskets.length === 0) return
+
+    for (const desId of guestBaskets) {
+      // Для каждого товара из корзины гостя отправим запрос на добавление
+      // Здесь можно добавить сохранённые параметры, если они есть
+      const itemKey = `cart-item-${desId}`
+      const saved = JSON.parse(localStorage.getItem(itemKey) || '{}')
+
+      const basketData = {
+        desertId: desId,
+        finalWeight: saved.weight || 0,
+        quantityDes: saved.quantity || 1,
+        sumPriceList: saved.price || 0,
+        customersId
+      }
+
+      try {
+        await axios.post('http://localhost:8080/apis/basket', basketData)
+      } catch (e) {
+        console.error('Ошибка при добавлении товара из гостевой корзины:', e)
+      }
+    }
+
+    // Очистим гостевую корзину
+    localStorage.removeItem('baskets')
+    guestBaskets.forEach((desId) => localStorage.removeItem(`cart-item-${desId}`))
+  }
+
   return {
     baskets,
     loadCart,
@@ -207,6 +239,7 @@ const sum_price_list = isCake ? price : price * quantity
     updateCartItem,
     updateCartItemsBulk,
     removeFromCart,
-    clearCart
+    clearCart,
+    mergeGuestCartToUser
   }
 })

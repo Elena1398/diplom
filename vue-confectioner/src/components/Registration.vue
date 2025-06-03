@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-
+import { useCartStore } from '@/stores/baskets'  // если есть, чтобы обновить корзину после
 
 const surname = ref('')
 const name = ref('')
@@ -16,19 +16,45 @@ const repepassword = ref('')
 const adress = ref('')
 
 const auth = useAuthStore()
+const cartStore = useCartStore()
 const router = useRouter()
-
-
 
 const passwordMismatchError = computed(() => passwords.value !== repepassword.value)
 const emailOrPhoneError = computed(() => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value))
+
+async function syncGuestCartToUser(customersId) {
+  const guestBaskets = JSON.parse(localStorage.getItem('baskets') || '[]')
+  if (!guestBaskets.length) return
+
+  for (const des_id of guestBaskets) {
+    const itemKey = `cart-item-${des_id}`
+    const saved = JSON.parse(localStorage.getItem(itemKey) || '{}')
+    const weight = saved.weight || 0
+    const quantity = saved.quantity || 1
+    const price = saved.price || 0
+
+    try {
+      await axios.post('http://localhost:8080/apis/basket', {
+        desertId: des_id,
+        finalWeight: weight,
+        sumPriceList: price * quantity,
+        quantityDes: quantity,
+        customersId
+      })
+    } catch (error) {
+      console.error(`Ошибка добавления товара des_id=${des_id} в корзину:`, error)
+    }
+  }
+
+  localStorage.removeItem('baskets')
+  guestBaskets.forEach(des_id => localStorage.removeItem(`cart-item-${des_id}`))
+}
 
 const handleRegis = async () => {
   if (passwordMismatchError.value) {
     alert('Пароли не совпадают')
     return
   }
-
   if (emailOrPhoneError.value) {
     alert('Неверный формат email')
     return
@@ -47,8 +73,18 @@ const handleRegis = async () => {
     }
 
     const response = await axios.post('http://localhost:8080/apis/registration', userData)
+
+    // Предполагаем, что в ответе пришёл созданный пользователь:
+    const user = response.data.cus
+    localStorage.setItem('customersId', user.cus_id)
+
+    // Поднимаем корзину из localStorage на сервер для нового пользователя
+    await syncGuestCartToUser(user.cus_id)
+
+    auth.setUser(user)
+    await cartStore.loadCart() // обновляем корзину из сервера, если используете стор корзины
+
     alert('Регистрация успешна!')
-    auth.setUser(response.data.cus)
     router.push('/')
   } catch (error) {
     console.error('Ошибка регистрации:', error)
@@ -59,9 +95,8 @@ const handleRegis = async () => {
 onMounted(() => {
   auth.loadUserFromLocalStorage()
 })
-
-
 </script>
+
 
 
 <template>

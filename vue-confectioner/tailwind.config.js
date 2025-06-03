@@ -5,7 +5,8 @@ export default {
     extend: {
       colors: {
          'lilac': '#c091d0',
-         'lilacblack': '#a69dab' 
+         'lilacblack': '#a69dab',
+         'creamy': '#fdf4e3' 
       }
     }
   },

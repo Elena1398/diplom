@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 import { useCartStore } from '@/stores/baskets'
+import { useAuthStore } from '@/stores/auth'
 const cartStore = useCartStore()
 
 const props = defineProps({
@@ -21,6 +22,10 @@ const props = defineProps({
   isAdded: Boolean,
   basketId: Number
 })
+
+const auth = useAuthStore()
+
+const isAdmin = computed(() => auth.user?.role === 'admin')
 
 const priceOptions = ref([])
 const selectedWeight = ref(props.weight || 0)
@@ -53,7 +58,6 @@ watch(selectedWeight, async (newWeight) => {
 
 const selectedPrice = ref(props.price || 0)
 
-const quantity = ref(1)
 const localIsAdded = ref(props.isAdded || false)
 const localBasketId = ref(props.basketId || null)
 const localIsFavorite = ref(props.isFavorite || false)
@@ -64,7 +68,8 @@ const isCake = computed(() => selectedWeight.value >= 500)
 
 const productQuantitySettings = {
   'Кофеты "Трюфель на молочном шоколаде"': { start: 6, step: 3 },
-  'Кофеты "Трюфель на молочном шоколаде с вафельной крошкой"': { start: 6, step: 3 }
+  'Кофеты "Трюфель на молочном шоколаде с вафельной крошкой"': { start: 6, step: 3 },
+  'Печенье сэндвич': { start: 10, step: 1 }
 }
 const productSettings = computed(
   () => productQuantitySettings[props.title] || { start: 1, step: 1 }
@@ -74,6 +79,12 @@ const minOrderText = computed(() => {
   return productSettings.value.start > 1
     ? `Минимальный заказ: от ${productSettings.value.start} шт.`
     : ''
+})
+
+const quantity = ref(1)
+
+onMounted(() => {
+  quantity.value = productSettings.value.start
 })
 
 const totalPrice = computed(() => {
@@ -288,7 +299,7 @@ onMounted(async () => {
     localIsAdded.value = guestCart.some((item) => item.code === props.code)
     localIsFavorite.value = guestFav.includes(props.code)
   }
-  await cartStore.loadCart() 
+  await cartStore.loadCart()
 })
 
 // watch(quantity, async (newQuantity) => {
@@ -332,9 +343,7 @@ watch([quantity, selectedWeight], async ([newQuantity, newWeight]) => {
           desertId: props.code,
           finalWeight: isCake.value ? newWeight : 0,
           quantityDes: isCake.value ? 0 : newQuantity,
-          sumPriceList: isCake.value
-            ? selectedPrice.value
-            : selectedPrice.value * newQuantity
+          sumPriceList: isCake.value ? selectedPrice.value : selectedPrice.value * newQuantity
         }
 
         await axios.put(
@@ -351,7 +360,6 @@ watch([quantity, selectedWeight], async ([newQuantity, newWeight]) => {
   }
 })
 
-
 watch(
   () => cartStore.baskets,
   (newBaskets) => {
@@ -361,8 +369,6 @@ watch(
   },
   { deep: true }
 )
-
-
 </script>
 
 <template>
@@ -407,7 +413,7 @@ watch(
         </div>
       </div>
 
-      <div class="flex items-center mt-5 ml-1 space-x-2">
+      <div v-if="!isAdmin" class="flex items-center mt-5 ml-1 space-x-2">
         <button
           @click="decreaseWeight"
           class="border p-2 w-32 bg-lilac rounded-xl text-white hover:bg-purple-600 active:scale-90 transition"
@@ -425,9 +431,10 @@ watch(
         </button>
       </div>
 
-      <div v-if="minOrderText" class="mt-2 text-slate-400 text-base">{{ minOrderText }}</div>
+      <div v-if="minOrderText" class="mt-5 text-slate-400 text-lg">{{ minOrderText }}</div>
 
-      <div class="flex items-center mt-5 space-x-4">
+      <!-- Для НЕ админа -->
+      <div v-if="!isAdmin" class="flex items-center mt-5 space-x-4">
         <button
           @click="addOrRemoveFromCart"
           class="border border-slate-300 rounded-lg px-6 py-2 bg-lilac w-auto size-min text-center font-mono text-white hover:bg-purple-600 active:scale-90 transition"
@@ -441,6 +448,23 @@ watch(
           alt="like"
           class="border rounded-lg p-2 w-10 h-10 cursor-pointer transition-transform hover:scale-110"
         />
+      </div>
+
+      <!-- Для АДМИНА -->
+      <div v-else class="flex items-center mt-5 space-x-4">
+        <button
+          @click="editProduct"
+          class="border rounded-lg px-6 py-2 bg-lilac w-auto font-mono text-white hover:bg-purple-400 active:scale-95 transition"
+        >
+          ✏️ Редактировать
+        </button>
+
+        <button
+          @click="deleteProduct"
+          class="border rounded-lg px-6 py-2 bg-purple-600 w-auto font-mono text-white hover:bg-purple-700 active:scale-95 transition"
+        >
+          🗑 Удалить
+        </button>
       </div>
     </div>
   </div>

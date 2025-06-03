@@ -5,25 +5,41 @@ class UsControllers {
     try {
       const { login, passwords } = req.body;
 
-      // SQL-запрос на поиск пользователя по логину и паролю
-      const query = `
-           SELECT * FROM public.customers 
-           WHERE login = $1 AND passwords = crypt($2, passwords)`;
-      const values = [login, passwords];
+      // Проверка среди клиентов
+      const customerQuery = `
+      SELECT *, 'customer' AS role FROM public.customers 
+      WHERE login = $1 AND passwords = crypt($2, passwords)
+    `;
+      const customerResult = await db.query(customerQuery, [login, passwords]);
 
-      const result = await db.query(query, values);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Неверный логин или пароль" });
+      if (customerResult.rows.length > 0) {
+        const cus = customerResult.rows[0];
+        return res
+          .status(200)
+          .json({ message: "Авторизация успешна", user: cus });
       }
 
-      const cus = result.rows[0];
-      return res.status(200).json({ message: "Авторизация успешна", cus });
+      // Проверка среди администраторов
+      const adminQuery = `
+      SELECT *, 'admin' AS role FROM public.admins 
+      WHERE login = $1 AND password = crypt($2, password)
+    `;
+      const adminResult = await db.query(adminQuery, [login, passwords]);
+
+      if (adminResult.rows.length > 0) {
+        const admin = adminResult.rows[0];
+        return res
+          .status(200)
+          .json({ message: "Авторизация успешна", user: admin });
+      }
+
+      return res.status(404).json({ message: "Неверный логин или пароль" });
     } catch (error) {
-      console.error("Ошибка при авторизации пользователя:", error);
-      res.status(500).json({ message: "Ошибка при авторизации", error });
+      console.error("Ошибка при авторизации:", error);
+      return res.status(500).json({ message: "Ошибка сервера", error });
     }
   }
+
   async registrationUser(req, res) {
     try {
       const {
@@ -117,6 +133,40 @@ class UsControllers {
         .json({ message: "Ошибка при получении данных пользователя", error });
     }
   }
+  async getadminsId(req, res) {
+    try {
+      const adminId = req.params.id;
+
+      const adminQuery = `
+      SELECT 
+        admin_id as id,
+        surname_admin as surname,
+        firstname_admin as name,
+        patronymic_admin as patronymic,
+        TO_CHAR(date_of_birthday, 'YYYY-MM-DD') as birthday,
+        email,
+        login,
+        NULL as address,
+        'admin' as role
+      FROM public.admins
+      WHERE admin_id = $1
+    `;
+
+      const result = await db.query(adminQuery, [adminId]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Админ не найден" });
+      }
+
+      const user = result.rows[0];
+      res.status(200).json(user);
+    } catch (error) {
+      console.error("Ошибка при получении данных админа:", error);
+      res
+        .status(500)
+        .json({ message: "Ошибка при получении данных админа", error });
+    }
+  }
   async updateUser(req, res) {
     try {
       const cus_id = req.params.id;
@@ -158,6 +208,44 @@ class UsControllers {
       res.status(500).json({ message: "Ошибка при обновлении данных", error });
     }
   }
+  async updateAdmin(req, res) {
+    try {
+      const admin_id = req.params.id;
+      const { surname, name, patronymic, birthday, login, email } = req.body;
+
+      const updateAdminInfo = `
+      UPDATE public.admins
+      SET 
+        surname_admin = $1, 
+        firstname_admin = $2, 
+        patronymic_admin = $3, 
+        date_of_birthday = $4, 
+        login = $5,
+        email = $6
+      WHERE admin_id = $7
+    `;
+
+      const result = await db.query(updateAdminInfo, [
+        surname,
+        name,
+        patronymic || null,
+        birthday,
+        login,
+        email,
+        admin_id,
+      ]);
+
+      // Проверим, действительно ли что-то обновилось
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Администратор не найден" });
+      }
+
+      res.status(200).json({ message: "Данные успешно обновлены" });
+    } catch (error) {
+      console.error("Ошибка при обновлении данных администратора:", error);
+      res.status(500).json({ message: "Ошибка при обновлении данных", error });
+    }
+  }
   async changePassword(req, res) {
     try {
       const { userId, oldPassword, newPassword } = req.body;
@@ -187,6 +275,36 @@ class UsControllers {
       res.status(500).json({ message: "Ошибка при смене пароля", error });
     }
   }
+  async changeAdminPassword(req, res) {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+
+    // Проверяем админа и валидируем старый пароль (используем поле password)
+    const checkAdminQuery = `
+      SELECT * FROM public.admins
+      WHERE admin_id = $1 AND password = crypt($2, password);
+    `;
+    const adminResult = await db.query(checkAdminQuery, [userId, oldPassword]);
+
+    if (adminResult.rows.length === 0) {
+      return res.status(401).json({ message: "Старый пароль неверен" });
+    }
+
+    // Обновляем пароль
+    const updateQuery = `
+      UPDATE public.admins
+      SET password = crypt($1, gen_salt('bf'))
+      WHERE admin_id = $2;
+    `;
+    await db.query(updateQuery, [newPassword, userId]);
+
+    res.status(200).json({ message: "Пароль успешно изменён" });
+  } catch (error) {
+    console.error("Ошибка при смене пароля администратора:", error);
+    res.status(500).json({ message: "Ошибка при смене пароля", error: error.message });
+  }
+}
+
   async createOrder(req, res) {
     try {
       const { cus_id, date, timeSlot, totalPrice } = req.body;
@@ -352,20 +470,18 @@ class UsControllers {
     }
   }
   async clearBasketByCustomer(req, res) {
-  try {
-    const { customersId } = req.body;
+    try {
+      const { customersId } = req.body;
 
-    await db.query(
-      "DELETE FROM public.baskets WHERE cus_id = $1",
-      [customersId]
-    );
+      await db.query("DELETE FROM public.baskets WHERE cus_id = $1", [
+        customersId,
+      ]);
 
-    res.json({ message: "Корзина очищена" });
-  } catch (error) {
-    console.error("Ошибка при очистке корзины:", error);
-    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+      res.json({ message: "Корзина очищена" });
+    } catch (error) {
+      console.error("Ошибка при очистке корзины:", error);
+      res.status(500).json({ message: "Ошибка сервера", error: error.message });
+    }
   }
-}
-
 }
 module.exports = new UsControllers();

@@ -8,7 +8,11 @@ const props = defineProps({
   isFavorite: Boolean,
   isAdded: Boolean,
   onClickAdd: Function,
-  onClickFavorite: Function
+  onClickFavorite: Function,
+  userRole: {
+    type: String,
+    default: 'user'
+  }
 })
 
 const formatPrice = (price) => {
@@ -28,14 +32,14 @@ const showFavoriteButton = Boolean(props.onClickFavorite)
     class="relative bg-white border border-slate-300 rounded-3xl p-6 cursor-pointer transition hover:-translate-y-2 hover:shadow-xl flex flex-col h-full"
   >
     <img
-      v-if="showFavoriteButton"
+      v-if="showFavoriteButton && userRole !== 'admin'"
       class="absolute top-8 left-8 w-5 h-5"
       @click="onClickFavorite"
       :src="!isFavorite ? '../svg/lik.svg' : '../svg/heart.png'"
       alt="like"
     />
     <router-link :to="{ name: 'DecertPage', params: { id: props.code } }">
-      <img :src="imageUrl" alt="decert" class="rounded-xl mb-4" />
+      <img :src="imageUrl" alt="decert" class="w-full h-40 object-cover rounded-xl mb-4" />
       <p class="mt-2 font-bold text-center flex-grow min-h-[60px]">{{ title }}</p>
     </router-link>
     <div class="flex justify-between mt-5">
@@ -44,7 +48,7 @@ const showFavoriteButton = Boolean(props.onClickFavorite)
         <b>{{ formatPrice(price) }}</b>
       </div>
       <img
-        v-if="showFavoriteButton"
+        v-if="showFavoriteButton && userRole !== 'admin'"
         class="pt-10"
         @click="onClickAdd"
         :src="!isAdded ? '../svg/plus.svg' : '../svg/check.svg'"

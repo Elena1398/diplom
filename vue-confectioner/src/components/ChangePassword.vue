@@ -17,19 +17,24 @@ const handleChangePassword = async () => {
   }
 
   try {
+    const url =
+      auth.user.role === 'admin'
+        ? 'http://localhost:8080/apis/admin-change-password'
+        : 'http://localhost:8080/apis/change-password'
+
     const response = await axios.post(
-  'http://localhost:8080/apis/change-password',
-  {
-    userId: auth.user.cus_id, // добавьте это
-    oldPassword: oldPassword.value,
-    newPassword: newPassword.value,
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${auth.token}`, // если нужно
-    },
-  }
-)
+      url,
+      {
+        userId: auth.user.admin_id || auth.user.cus_id, // admin_id для админа, cus_id для клиента
+        oldPassword: oldPassword.value,
+        newPassword: newPassword.value
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${auth.token}` // если используешь аутентификацию
+        }
+      }
+    )
     alert(response.data.message || 'Пароль успешно изменён!')
   } catch (error) {
     console.error('Ошибка смены пароля:', error)

@@ -3,16 +3,51 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/baskets'
 
 const auth = useAuthStore()
-
-onMounted(() => {
-  auth.loadUserFromLocalStorage() // Загружаем данные пользователя при монтировании компонента
-})
-
+const cartStore = useCartStore()
 const router = useRouter()
+
 const login = ref('')
 const passwords = ref('')
+
+onMounted(() => {
+  auth.loadUserFromLocalStorage()
+})
+
+// Функция, чтобы "поднять" гостевую корзину в корзину пользователя
+async function syncGuestCartToUser(customersId) {
+  const guestBaskets = JSON.parse(localStorage.getItem('baskets') || '[]')
+  if (!guestBaskets.length) return
+
+  // Перебираем все товары из гостевой корзины
+  for (const des_id of guestBaskets) {
+    const itemKey = `cart-item-${des_id}`
+    const saved = JSON.parse(localStorage.getItem(itemKey) || '{}')
+    const weight = saved.weight || 0
+    const quantity = saved.quantity || 1
+    const price = saved.price || 0
+
+    try {
+      // Отправляем запрос на сервер для добавления товара в корзину пользователя
+      await axios.post('http://localhost:8080/apis/basket', {
+        desertId: des_id,
+        finalWeight: weight,
+        sumPriceList: price * quantity,
+        quantityDes: quantity,
+        customersId
+      })
+    } catch (error) {
+      console.error(`Ошибка при добавлении товара des_id=${des_id} в корзину:`, error)
+    }
+  }
+
+  // Очистить гостевую корзину из localStorage
+  localStorage.removeItem('baskets')
+  guestBaskets.forEach((des_id) => localStorage.removeItem(`cart-item-${des_id}`))
+}
+
 const handleLogin = async () => {
   try {
     const response = await axios.post('http://localhost:8080/apis/login', {
@@ -20,21 +55,35 @@ const handleLogin = async () => {
       passwords: passwords.value
     })
 
-    const user = response.data.cus
-    localStorage.setItem('customersId', user.cus_id) // Сохраняем ID в localStorage
+    const user = response.data.user
+    localStorage.setItem('role', user.role)
 
-    alert('Авторизация успешна!')
-    auth.setUser(user) // если используешь pinia
-    router.push('/')   // переход на главную
+    if (user.role === 'admin') {
+      localStorage.setItem('adminId', user.admin_id)
+      auth.setUser(user)
+      alert('Вход администратора успешен!')
+      router.push('/')
+    } else {
+      // Сначала сохраняем customersId, чтобы использовать в синхронизации корзины
+      localStorage.setItem('customersId', user.cus_id)
+
+      // Поднимаем гостевую корзину в серверную корзину пользователя
+      await syncGuestCartToUser(user.cus_id)
+
+      // После этого устанавливаем пользователя и загружаем корзину из сервера
+      auth.setUser(user)
+      await cartStore.loadCart()
+
+      alert('Вход пользователя успешен!')
+      router.push('/')
+    }
   } catch (error) {
     alert('Ошибка авторизации')
     console.error(error)
   }
 }
-
-
-
 </script>
+
 
 <template>
   <div class="mt-20">

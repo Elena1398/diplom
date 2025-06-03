@@ -1,10 +1,13 @@
 <script setup>
-import { onMounted, ref, watch, reactive, provide } from 'vue'
+import { onMounted, ref, watch, reactive, provide, computed } from 'vue'
 import axios from 'axios'
 import Catalog from '@/components/Catalog.vue'
+// import Main from '@/components/Main.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
+
+const userRole = computed(() => auth.user?.role || 'guest')
 
 onMounted(() => {
   auth.loadUserFromLocalStorage()
@@ -271,8 +274,8 @@ provide('addToFavorite', addToFavorite)
 
 
 <template>
-  <div class="m-10">
-        <!-- <Main /> -->
+  <div class="bg-lilacblack m-10">
+        <Main /> 
       </div>
   <div class="p-10 flex">
     <div class="w-1/5 pr-4">
@@ -334,6 +337,7 @@ provide('addToFavorite', addToFavorite)
       <Catalog
         v-else
         :items="items"
+         :user-role="userRole"
         @add-to-favorite="addToFavorite"
         :onChangeSearchInput="onChangeSearchInput"
         @add-to-card="onClickAddPlus"

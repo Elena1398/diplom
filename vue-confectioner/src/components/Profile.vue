@@ -5,11 +5,6 @@ import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 
-onMounted(() => {
-  auth.loadUserFromLocalStorage() // Загружаем данные пользователя при монтировании компонента
-})
-
-
 const surname = ref('')
 const name = ref('')
 const patronymic = ref('')
@@ -18,47 +13,83 @@ const email = ref('')
 const login = ref('')
 const adress = ref('')
 const emailOrPhoneError = ref(false)
+const role = ref('')
 
+onMounted(() => {
+  role.value = localStorage.getItem('role') || ''
+})
 
 onMounted(async () => {
-  const userId = localStorage.getItem('customersId')
-  if (!userId) return
+  auth.loadUserFromLocalStorage()
+
+  const userId = localStorage.getItem('userId')
+  const role = localStorage.getItem('role')
+  
+
+  console.log('userId:', userId)
+  console.log('role:', role)
+
+  if (!userId || !role) return
 
   try {
-    const res = await axios.get(`http://localhost:8080/apis/customer/${userId}`) // подставь свой путь
-    const user = res.data
+    let res
 
-    surname.value = user.cus_surname
-    name.value = user.cus_name
-    patronymic.value = user.cus_patronymic
-    birthday.value = user.date_of_birthday // уже форматирован
-    email.value = user.cus_email
-    login.value = user.login
-    adress.value = user.cus_adress
+    if (role === 'admin') {
+      res = await axios.get(`http://localhost:8080/apis/admin/${userId}`)
+    } else {
+      res = await axios.get(`http://localhost:8080/apis/customer/${userId}`)
+    }
+
+    const user = res.data
+    console.log('Загружен пользователь:', user)
+
+    // Назначение значений
+    surname.value = user.surname || user.cus_surname || user.surname_admin || ''
+    name.value = user.name || user.cus_name || user.firstname_admin || ''
+    patronymic.value = user.patronymic || user.cus_patronymic || user.patronymic_admin || ''
+    birthday.value = user.birthday || user.date_of_birthday || ''
+    email.value = user.email || user.cus_email || ''
+    login.value = user.login || ''
+    adress.value = user.address || user.cus_adress || ''
+    
   } catch (err) {
     console.error('Ошибка загрузки данных пользователя:', err)
   }
 })
 
 const saveChanges = async () => {
-  const userId = localStorage.getItem('customersId')
-  if (!userId) return
+  const userId = localStorage.getItem('userId')
+  const role = localStorage.getItem('role')
 
-  // Валидация email
+  if (!userId || !role) return
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   emailOrPhoneError.value = !emailRegex.test(email.value)
   if (emailOrPhoneError.value) return
 
   try {
-    await axios.put(`http://localhost:8080/apis/customer/${userId}`, {
-      surname: surname.value,
-      name: name.value,
-      patronymic: patronymic.value,
-      birthday: birthday.value,
-      email: email.value,
-      login: login.value,
-      adress: adress.value
-    })
+    if (role === 'admin') {
+      await axios.put(`http://localhost:8080/apis/admin/${userId}`, {
+        surname: surname.value,
+        name: name.value,
+        patronymic: patronymic.value,
+        birthday: birthday.value,
+        email: email.value,
+        login: login.value,
+        
+      })
+    } else {
+      await axios.put(`http://localhost:8080/apis/customer/${userId}`, {
+        surname: surname.value,
+        name: name.value,
+        patronymic: patronymic.value,
+        birthday: birthday.value,
+        email: email.value,
+        login: login.value,
+        adress: adress.value
+      })
+    }
+
     alert('Данные успешно сохранены!')
   } catch (err) {
     console.error('Ошибка при сохранении:', err)
@@ -66,6 +97,8 @@ const saveChanges = async () => {
   }
 }
 
+localStorage.setItem('userId', '1')
+localStorage.setItem('role', 'admin')
 </script>
 
 <template>
@@ -141,7 +174,7 @@ const saveChanges = async () => {
           class="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:border-purple-400 transition duration-300"
         />
       </div>
-      <div class="mb-6">
+      <div class="mb-6" v-if="role !== 'admin'">
         <label class="block font-mono mb-2">Адрес:</label>
         <input
           id="adress"
@@ -153,11 +186,10 @@ const saveChanges = async () => {
       </div>
     </form>
     <button
-  @click.prevent="saveChanges"
-  class="border border-slate-300 rounded-lg py-2 px-4 mt-8 bg-lilac text-white font-mono block mx-auto"
->
-  Редактировать 
-</button>
-
+      @click.prevent="saveChanges"
+      class="border border-slate-300 rounded-lg py-2 px-4 mt-8 bg-lilac text-white font-mono block mx-auto"
+    >
+      Редактировать
+    </button>
   </div>
 </template>

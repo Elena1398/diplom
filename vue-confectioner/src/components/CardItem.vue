@@ -47,7 +47,8 @@ const isCake = computed(() => {
 
 const productQuantitySettings = {
   'Кофеты "Трюфель на молочном шоколаде"': { start: 6, step: 3 },
-  'Кофеты "Трюфель на молочном шоколаде с вафельной крошкой"': { start: 6, step: 3 }
+  'Кофеты "Трюфель на молочном шоколаде с вафельной крошкой"': { start: 6, step: 3 },
+  'Печенье сэндвич': { start: 10, step: 1 }
 }
 
 const productSettings = computed(() => {

@@ -19,6 +19,8 @@ onMounted(() => {
   BasStore.loadCart()
 })
 
+
+
 // Используем только данные из стора
 const baskets = computed(() => BasStore.baskets)
 const isAuthenticated = computed(() => !!auth.user)

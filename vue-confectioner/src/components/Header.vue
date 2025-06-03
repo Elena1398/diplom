@@ -1,18 +1,19 @@
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const auth = useAuthStore()
 const showDropdown = ref(false)
-const dropdownRef = ref(null) // ссылка на элемент dropdown
+const dropdownRef = ref(null)
+
+const isAdmin = computed(() => auth.user?.role === 'admin')
 
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value
 }
 
-// Закрытие дропдауна при клике вне его
 const handleClickOutside = (event) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
     showDropdown.value = false
@@ -55,22 +56,25 @@ const handleLogout = () => {
         <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/des">Каталог</router-link>
         </li>
-        <!-- <li class="hover:text-slate-500 cursor-pointer">
+        <template v-if="!isAdmin">
+          <!-- <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/aboutThePastryChef">О кондитере</router-link>
         </li> -->
-        <li class="hover:text-slate-500 cursor-pointer">
-          <router-link to="/deliveryAndPayment">Доставка и Оплата</router-link>
-        </li>
-        <!-- <li class="hover:text-slate-500 cursor-pointer">
+          <li class="hover:text-slate-500 cursor-pointer">
+            <router-link to="/deliveryAndPayment">Доставка и Оплата</router-link>
+          </li>
+          <!-- <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/">Торты на заказ</router-link>
         </li> -->
+          <!-- Только для клиентов -->
+          <router-link to="/favourites"
+            ><li class="flex items-center hover:text-slate-500 gap-3 cursor-pointer">
+              <img src="../../svg/lik.svg" alt="" />
+              Избранное
+            </li></router-link
+          >
+        </template>
 
-        <router-link to="/favourites"
-          ><li class="flex items-center hover:text-slate-500 gap-3 cursor-pointer">
-            <img src="../../svg/lik.svg" alt="" />
-            Избранное
-          </li></router-link
-        >
         <!-- Если не авторизован -->
         <li v-if="!auth.isAuthenticated">
           <router-link
@@ -91,22 +95,43 @@ const handleLogout = () => {
 
           <ul
             v-if="showDropdown"
-            class="absolute top-full mt-2 right-30 bg-white border rounded rounded-xl shadow-md w-48 z-50 font-mono"
+            class="absolute top-full mt-2 right-0 bg-white border rounded-xl shadow-md w-48 z-50 font-mono"
           >
-            <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
-              <router-link to="/profile">Профиль</router-link>
-            </li>
-            <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
-              <router-link to="/change-password">Сменить пароль</router-link>
-            </li>
-            <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
-              <router-link to="/myOrders">Мои заказы</router-link>
-            </li>
+            <template v-if="isAdmin">
+              <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
+                <router-link to="/profile">Профиль</router-link>
+              </li>
+              <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
+                <router-link to="/change-password">Сменить пароль</router-link>
+              </li>
+            </template>
+            <template v-else>
+              <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
+                <router-link to="/profile">Профиль</router-link>
+              </li>
+              <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
+                <router-link to="/change-password">Сменить пароль</router-link>
+              </li>
+              <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">
+                <router-link to="/myOrders">Мои заказы</router-link>
+              </li>
+            </template>
             <li class="px-4 py-2 text-purple-600 hover:bg-gray-100" @click="handleLogout">Выйти</li>
           </ul>
         </li>
+
+        <!-- Только для админа -->
+        <li v-if="auth.isAuthenticated && isAdmin" class="hover:text-slate-500 cursor-pointer">
+          <router-link
+            to="/addDes"
+            class="border border-slate-300 rounded-lg px-6 py-2 bg-lilac w-auto size-min text-center font-mono text-white hover:bg-purple-600 active:scale-90 transition"
+          >
+            + Добавить десерт
+          </router-link>
+        </li>
+
         <router-link to="/basket"
-          ><li class="flex items-center hover:text-slate-500 gap-3 cursor-pointer">
+          ><li v-if="!isAdmin" class="flex items-center hover:text-slate-500 gap-3 cursor-pointer">
             <img src="../../svg/shopping_basket.svg" alt="" />
             Корзина
           </li></router-link

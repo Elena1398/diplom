@@ -7,6 +7,7 @@ import Registration from './components/Registration.vue'
 import AboutThePastryChef from '@/components/AboutThePastryChef.vue'
 import HomeDes from './page/HomeDes.vue'
 import DecertPage from './page/DecertPage.vue'
+import AddDes from './components/AddDes.vue'
 import Favourites from '@/page/Favourites.vue'
 import Basket from '@/page/Basket.vue'
 import Checkout from '@/components/Checkout.vue'
@@ -43,6 +44,12 @@ const routes = [
     path: '/desert/:id',
     name: 'DecertPage',
     component: DecertPage,
+    props: true
+  },
+    {
+    path: '/addDes',
+    name: 'AddDes',
+    component: AddDes,
     props: true
   },
   {
