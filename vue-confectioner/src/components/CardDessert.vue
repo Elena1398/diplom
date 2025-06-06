@@ -3,7 +3,29 @@ import { ref, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 import { useCartStore } from '@/stores/baskets'
 import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 const cartStore = useCartStore()
+
+const router = useRouter()
+const showDeleteModal = ref(false)
+
+const editProduct = () => {
+  router.push({ path: '/addDes', query: { id: props.code } })
+}
+const deleteProduct = () => {
+  showDeleteModal.value = true
+}
+
+const confirmDeleteProduct = async () => {
+  try {
+    await axios.delete(`http://localhost:8080/apis/desert/${props.code}`)
+    router.push('/') // или куда нужно после удаления
+  } catch (error) {
+    console.error('Ошибка при удалении десерта:', error)
+  } finally {
+    showDeleteModal.value = false
+  }
+}
 
 const props = defineProps({
   code: Number,
@@ -69,7 +91,8 @@ const isCake = computed(() => selectedWeight.value >= 500)
 const productQuantitySettings = {
   'Кофеты "Трюфель на молочном шоколаде"': { start: 6, step: 3 },
   'Кофеты "Трюфель на молочном шоколаде с вафельной крошкой"': { start: 6, step: 3 },
-  'Печенье сэндвич': { start: 10, step: 1 }
+  'Печенье сэндвич': { start: 10, step: 1 },
+  'Печенье "Орешки"': { start: 10, step: 1 }
 }
 const productSettings = computed(
   () => productQuantitySettings[props.title] || { start: 1, step: 1 }
@@ -372,9 +395,11 @@ watch(
 </script>
 
 <template>
-  <div class="flex mt-5">
+  <div
+    class="bg-white shadow-xl rounded-2xl p-10 max-w-7xl mx-auto mt-10 mb-40 flex flex-wrap lg:flex-nowrap gap-10"
+  >
     <div class="w-1/2 p-10">
-      <img class="rounded-xl" :src="imageUrl" alt="des" />
+      <img class="rounded-xl w-full h-auto object-cover shadow-md" :src="imageUrl" alt="des" />
     </div>
 
     <div class="w-1/2 p-10">
@@ -458,7 +483,28 @@ watch(
         >
           ✏️ Редактировать
         </button>
-
+        <template v-if="showDeleteModal">
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 shadow-lg max-w-sm w-full text-center">
+              <h2 class="text-xl font-semibold mb-4">Удалить десерт?</h2>
+              <p class="text-slate-600 mb-6">Вы уверены, что хотите удалить этот десерт?</p>
+              <div class="flex justify-center gap-4">
+                <button
+                  @click="confirmDeleteProduct"
+                  class="bg-lilac text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                >
+                  Да, удалить
+                </button>
+                <button
+                  @click="showDeleteModal = false"
+                  class="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
         <button
           @click="deleteProduct"
           class="border rounded-lg px-6 py-2 bg-purple-600 w-auto font-mono text-white hover:bg-purple-700 active:scale-95 transition"

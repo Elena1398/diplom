@@ -2,7 +2,6 @@
 import { onMounted, ref, watch, reactive, provide, computed } from 'vue'
 import axios from 'axios'
 import Catalog from '@/components/Catalog.vue'
-// import Main from '@/components/Main.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -26,8 +25,7 @@ const fetchBaskets = async () => {
   const customersId = localStorage.getItem('customersId')
 
   if (!customersId) {
-    // ✅ Гость
-    const guestCart = JSON.parse(localStorage.getItem('baskets') || '[]') // <-- исправлено
+    const guestCart = JSON.parse(localStorage.getItem('baskets') || '[]') 
     items.value = items.value.map((item) => {
       const isInGuestCart = guestCart.includes(item.des_id)
       return {
@@ -41,7 +39,9 @@ const fetchBaskets = async () => {
 
   // Авторизованный
   try {
-    const { data: baskets } = await axios.get(`http://localhost:8080/apis/baskets?customersId=${customersId}`)
+    const { data: baskets } = await axios.get(
+      `http://localhost:8080/apis/baskets?customersId=${customersId}`
+    )
     items.value = items.value.map((item) => {
       const basket = baskets.find((basket) => basket.des_id === item.des_id)
       return {
@@ -59,13 +59,12 @@ const addToBaskets = async (item) => {
   const customersId = localStorage.getItem('customersId')
 
   if (!customersId) {
-    // ✅ Гостевая корзина
     const guestCart = JSON.parse(localStorage.getItem('baskets') || '[]')
 
     if (!item.isAdded) {
       item.isAdded = true
       guestCart.push(item.des_id)
-      localStorage.setItem('baskets', JSON.stringify(guestCart)) // <-- исправлено
+      localStorage.setItem('baskets', JSON.stringify(guestCart)) 
     }
 
     return
@@ -93,9 +92,8 @@ const removeFromCart = async (item) => {
   const customersId = localStorage.getItem('customersId')
 
   if (!customersId) {
-    // ✅ Гостевая корзина
     let guestCart = JSON.parse(localStorage.getItem('baskets') || '[]')
-    guestCart = guestCart.filter(id => id !== item.des_id) // <-- исправлено
+    guestCart = guestCart.filter((id) => id !== item.des_id) // <-- исправлено
     localStorage.setItem('baskets', JSON.stringify(guestCart)) // <-- исправлено
 
     item.isAdded = false
@@ -140,56 +138,58 @@ const onChangeSearchInput = (event) => {
 
 const fetchFavorites = async () => {
   try {
-    const customersId = localStorage.getItem('customersId');
-    let favorites = [];
+    const customersId = localStorage.getItem('customersId')
+    let favorites = []
 
     if (customersId) {
-      const { data } = await axios.get(`http://localhost:8080/apis/favourites?customersId=${customersId}`);
-      favorites = data;
+      const { data } = await axios.get(
+        `http://localhost:8080/apis/favourites?customersId=${customersId}`
+      )
+      favorites = data
     } else {
-      favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      favorites = JSON.parse(localStorage.getItem('favorites') || '[]')
     }
 
     const favoriteIds = new Set(
       Array.isArray(favorites)
-        ? (typeof favorites[0] === 'object'
-            ? favorites.map(f => f.des_id)
-            : favorites)
+        ? typeof favorites[0] === 'object'
+          ? favorites.map((f) => f.des_id)
+          : favorites
         : []
-    );
+    )
 
-    items.value = items.value.map(item => {
-      const favoriteItem = favorites.find(fav => {
-        return typeof fav === 'object' && fav.des_id === item.des_id;
-      });
+    items.value = items.value.map((item) => {
+      const favoriteItem = favorites.find((fav) => {
+        return typeof fav === 'object' && fav.des_id === item.des_id
+      })
 
       return {
         ...item,
         isFavorite: favoriteIds.has(item.des_id),
         favoriteId: favoriteItem ? favoriteItem.favor_id : null
-      };
-    });
+      }
+    })
   } catch (error) {
-    console.log(error);
+    console.log(error)
   }
-};
+}
 
 const addToFavorite = async (item) => {
-  const customersId = localStorage.getItem('customersId');
+  const customersId = localStorage.getItem('customersId')
 
   if (!customersId) {
-    let guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    let guestFavorites = JSON.parse(localStorage.getItem('favorites') || '[]')
 
     if (!item.isFavorite) {
-      guestFavorites.push(item.des_id);
-      item.isFavorite = true;
+      guestFavorites.push(item.des_id)
+      item.isFavorite = true
     } else {
-      guestFavorites = guestFavorites.filter(id => id !== item.des_id);
-      item.isFavorite = false;
+      guestFavorites = guestFavorites.filter((id) => id !== item.des_id)
+      item.isFavorite = false
     }
 
-    localStorage.setItem('favorites', JSON.stringify(guestFavorites));
-    return;
+    localStorage.setItem('favorites', JSON.stringify(guestFavorites))
+    return
   }
 
   try {
@@ -197,31 +197,31 @@ const addToFavorite = async (item) => {
       const obj = {
         desertId: item.des_id,
         customersId
-      };
+      }
 
-      const { data } = await axios.post('http://localhost:8080/apis/favourite', obj);
-      item.isFavorite = true;
-      item.favoriteId = data.favor_id;
+      const { data } = await axios.post('http://localhost:8080/apis/favourite', obj)
+      item.isFavorite = true
+      item.favoriteId = data.favor_id
     } else {
-      await axios.delete('http://localhost:8080/apis/favourite/' + item.favoriteId);
-      item.isFavorite = false;
-      item.favoriteId = null;
+      await axios.delete('http://localhost:8080/apis/favourite/' + item.favoriteId)
+      item.isFavorite = false
+      item.favoriteId = null
     }
 
-    items.value = items.value.map(des => {
+    items.value = items.value.map((des) => {
       if (des.des_id === item.des_id) {
         return {
           ...des,
           isFavorite: item.isFavorite,
           favoriteId: item.favoriteId
-        };
+        }
       }
-      return des;
-    });
+      return des
+    })
   } catch (err) {
-    console.log(err);
+    console.log(err)
   }
-};
+}
 
 const fetchItems = async () => {
   const params = {
@@ -233,7 +233,7 @@ const fetchItems = async () => {
   try {
     const { data } = await axios.get('http://localhost:8080/apis/des', { params })
 
-    items.value = data.map(item => ({
+    items.value = data.map((item) => ({
       ...item,
       isAdded: false,
       basketId: null,
@@ -243,7 +243,6 @@ const fetchItems = async () => {
 
     await fetchFavorites()
     await fetchBaskets()
-
   } catch (error) {
     console.error('❌ Ошибка при получении десертов:', error)
   }
@@ -261,22 +260,18 @@ watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
     if (isAuth) {
-      await fetchItems() // Заново загрузить корзину и избранное авторизованного пользователя
+      await fetchItems() 
     }
   }
 )
-
-
 
 provide('cart', { cart, addToBaskets, removeFromCart, onClickAddPlus })
 provide('addToFavorite', addToFavorite)
 </script>
 
-
 <template>
   <div class="bg-lilacblack m-10">
-        <Main /> 
-      </div>
+  </div>
   <div class="p-10 flex">
     <div class="w-1/5 pr-4">
       <h2 class="text-3xl mb-8 font-mono">Фильтры</h2>
@@ -329,7 +324,6 @@ provide('addToFavorite', addToFavorite)
           />
         </div>
       </div>
-      <!-- Условная отрисовка -->
       <div v-if="items.length === 0" class="flex flex-col items-center text-lg text-gray-600 m-48">
         <img src="../../public/icons/cake.png" alt="cake" class="mb-4" />
         <a class="text-3xl font-mono" for="username">К сожалению, этой категории пока нет.</a>
@@ -337,7 +331,7 @@ provide('addToFavorite', addToFavorite)
       <Catalog
         v-else
         :items="items"
-         :user-role="userRole"
+        :user-role="userRole"
         @add-to-favorite="addToFavorite"
         :onChangeSearchInput="onChangeSearchInput"
         @add-to-card="onClickAddPlus"

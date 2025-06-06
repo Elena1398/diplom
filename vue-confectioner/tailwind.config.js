@@ -6,7 +6,12 @@ export default {
       colors: {
          'lilac': '#c091d0',
          'lilacblack': '#a69dab',
-         'creamy': '#fdf4e3' 
+         'footer': '#654633',
+         'light_orange': '#ffb98d',
+         'light_beige':'#f8eaea',
+
+         'heareblak':'#fec89a',
+         'header':'#fedcc4'
       }
     }
   },

@@ -11,17 +11,17 @@ const router = useRouter()
 
 const login = ref('')
 const passwords = ref('')
+const showModal = ref(false)      // Управление видимостью модального окна
+const errorMessage = ref('')      // Сообщение об ошибке
 
 onMounted(() => {
   auth.loadUserFromLocalStorage()
 })
 
-// Функция, чтобы "поднять" гостевую корзину в корзину пользователя
 async function syncGuestCartToUser(customersId) {
   const guestBaskets = JSON.parse(localStorage.getItem('baskets') || '[]')
   if (!guestBaskets.length) return
 
-  // Перебираем все товары из гостевой корзины
   for (const des_id of guestBaskets) {
     const itemKey = `cart-item-${des_id}`
     const saved = JSON.parse(localStorage.getItem(itemKey) || '{}')
@@ -30,7 +30,6 @@ async function syncGuestCartToUser(customersId) {
     const price = saved.price || 0
 
     try {
-      // Отправляем запрос на сервер для добавления товара в корзину пользователя
       await axios.post('http://localhost:8080/apis/basket', {
         desertId: des_id,
         finalWeight: weight,
@@ -43,7 +42,6 @@ async function syncGuestCartToUser(customersId) {
     }
   }
 
-  // Очистить гостевую корзину из localStorage
   localStorage.removeItem('baskets')
   guestBaskets.forEach((des_id) => localStorage.removeItem(`cart-item-${des_id}`))
 }
@@ -61,33 +59,31 @@ const handleLogin = async () => {
     if (user.role === 'admin') {
       localStorage.setItem('adminId', user.admin_id)
       auth.setUser(user)
-      alert('Вход администратора успешен!')
       router.push('/')
     } else {
-      // Сначала сохраняем customersId, чтобы использовать в синхронизации корзины
       localStorage.setItem('customersId', user.cus_id)
-
-      // Поднимаем гостевую корзину в серверную корзину пользователя
       await syncGuestCartToUser(user.cus_id)
-
-      // После этого устанавливаем пользователя и загружаем корзину из сервера
       auth.setUser(user)
       await cartStore.loadCart()
-
-      alert('Вход пользователя успешен!')
       router.push('/')
     }
   } catch (error) {
-    alert('Ошибка авторизации')
+    errorMessage.value = 'Неверный логин или пароль. Пожалуйста, попробуйте снова.'
+    showModal.value = true
     console.error(error)
   }
 }
+
+const closeModal = () => {
+  showModal.value = false
+}
+
+
 </script>
 
-
 <template>
-  <div class="mt-20">
-    <div class="max-w-lg m-auto p-10">
+  <div class="py-16 mb-40">
+    <div class="bg-white rounded-2xl max-w-lg m-auto p-10">
       <h1 class="font-mono text-center uppercase text-3xl">Вход</h1>
 
       <form @submit.prevent="handleLogin">
@@ -116,16 +112,38 @@ const handleLogin = async () => {
           type="submit"
         >
           Войти
-        </button> 
+        </button>
       </form>
+
       <div class="flex justify-self-center items-center mt-6">
-          <router-link
-            class="font-mono text-center font-bold uppercase m-8 text-xl"
-            to="/registration"
-            >Регистрация</router-link
+        <router-link
+          class="font-mono text-center font-bold uppercase m-8 text-xl"
+          to="/registration"
+          >Регистрация</router-link
+        >
+        <img src="../../svg/arrow_forward.svg" alt="" />
+      </div>
+    </div>
+
+    <!-- Модальное окно ошибки -->
+    <div
+      v-if="showModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white p-8 rounded-xl max-w-md w-full shadow-lg">
+        <h3 class="text-xl font-bold mb-4 flex items-center justify-center text-lilac">
+          Ошибка авторизации
+        </h3>
+        <p class="mb-6 text-center">{{ errorMessage }}</p>
+        <div class="flex justify-center gap-4">
+          <button
+            @click="closeModal"
+            class="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400"
           >
-          <img src="../../svg/arrow_forward.svg" alt="" />
+            Закрыть
+          </button>
         </div>
+      </div>
     </div>
   </div>
 </template>

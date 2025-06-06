@@ -41,7 +41,7 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <header class="flex justify-between border-b border-slate-300 px-10 py-8">
+  <header class="bg-gradient-to-t from-amber-200/60 flex justify-between border-b border-slate-300 px-10 py-8">
     <router-link to="/des"
       ><div class="flex items-center">
         <img class="w-32" src="../../public/icons/vo.png" alt="" />
@@ -57,9 +57,9 @@ const handleLogout = () => {
           <router-link to="/des">Каталог</router-link>
         </li>
         <template v-if="!isAdmin">
-          <!-- <li class="hover:text-slate-500 cursor-pointer">
+          <li class="hover:text-slate-500 cursor-pointer">
           <router-link to="/aboutThePastryChef">О кондитере</router-link>
-        </li> -->
+        </li>
           <li class="hover:text-slate-500 cursor-pointer">
             <router-link to="/deliveryAndPayment">Доставка и Оплата</router-link>
           </li>
@@ -95,7 +95,7 @@ const handleLogout = () => {
 
           <ul
             v-if="showDropdown"
-            class="absolute top-full mt-2 right-0 bg-white border rounded-xl shadow-md w-48 z-50 font-mono"
+            class="absolute top-full mt-2 left-15 bg-white border rounded-xl shadow-md w-48 z-50 font-mono"
           >
             <template v-if="isAdmin">
               <li class="px-4 py-2 hover:bg-gray-100" @click="closeDropdown">

@@ -10,9 +10,18 @@ const auth = useAuthStore()
 
 const passwordMismatchError = computed(() => newPassword.value !== repepassword.value)
 
+// Для модального окна
+const showModal = ref(false)
+const modalMessage = ref('')
+
+const closeModal = () => {
+  showModal.value = false
+}
+
 const handleChangePassword = async () => {
   if (passwordMismatchError.value) {
-    alert('Новые пароли не совпадают')
+    modalMessage.value = 'Новые пароли не совпадают'
+    showModal.value = true
     return
   }
 
@@ -25,30 +34,32 @@ const handleChangePassword = async () => {
     const response = await axios.post(
       url,
       {
-        userId: auth.user.admin_id || auth.user.cus_id, // admin_id для админа, cus_id для клиента
+        userId: auth.user.admin_id || auth.user.cus_id,
         oldPassword: oldPassword.value,
         newPassword: newPassword.value
       },
       {
         headers: {
-          Authorization: `Bearer ${auth.token}` // если используешь аутентификацию
+          Authorization: `Bearer ${auth.token}`
         }
       }
     )
-    alert(response.data.message || 'Пароль успешно изменён!')
+    modalMessage.value = response.data.message || 'Пароль успешно изменён!'
+    showModal.value = true
   } catch (error) {
     console.error('Ошибка смены пароля:', error)
-    alert('Ошибка смены пароля. Проверьте старый пароль.')
+    modalMessage.value = 'Ошибка смены пароля. Проверьте старый пароль.'
+    showModal.value = true
   }
 }
 
 onMounted(() => {
-  auth.loadUserFromLocalStorage() // Загружаем данные пользователя при монтировании компонента
+  auth.loadUserFromLocalStorage()
 })
 </script>
 
 <template>
-  <div class="max-w-lg mx-auto p-10 mb-10">
+  <div class="bg-amber-200/50 mt-20 rounded-lg py-16 mb-40 max-w-lg mx-auto p-10 mb-10">
     <h1 class="font-mono text-center font-bold uppercase mb-4 text-xl">Смена пароля</h1>
     <form @submit.prevent="handleChangePassword">
       <div class="mb-6">
@@ -77,12 +88,12 @@ onMounted(() => {
           required
           :class="[
             'w-full p-2 border rounded-lg focus:outline-none transition duration-300',
-            passwordMismatchError
+            repepassword && passwordMismatchError
               ? 'border-red-500 focus:border-red-500'
               : 'border-slate-300 focus:border-purple-400'
           ]"
         />
-        <p v-if="passwordMismatchError" class="text-red-500 text-sm mt-1 font-mono">
+        <p v-if="repepassword && passwordMismatchError" class="text-red-500 text-sm mt-1 font-mono">
           Пароли не совпадают.
         </p>
       </div>
@@ -93,5 +104,21 @@ onMounted(() => {
         Изменить пароль
       </button>
     </form>
+
+    <!-- Модальное окно -->
+    <div
+      v-if="showModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center font-mono">
+        <p class="mb-6">{{ modalMessage }}</p>
+        <button
+          @click="closeModal"
+          class="bg-lilac text-white px-4 py-2 rounded hover:bg-purple-600 transition"
+        >
+          ОК
+        </button>
+      </div>
+    </div>
   </div>
 </template>

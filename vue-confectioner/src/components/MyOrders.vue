@@ -35,13 +35,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-16">
+  <div class="py-16 mb-40 p-16">
     <h2 class="text-3xl mb-8 font-mono">Мои заказы</h2>
 
     <div v-if="orders.length === 0" class="text-gray-600">У вас пока нет заказов</div>
 
     <div v-for="order in orders" :key="order.orders_id" class="mb-12">
-      <div class="mb-4 p-4 border rounded-md bg-gray-50">
+      <div class="mb-4 p-4 border border-2 rounded-md bg-gray-50">
         <div class="flex justify-between items-center">
           <div>
             <div>

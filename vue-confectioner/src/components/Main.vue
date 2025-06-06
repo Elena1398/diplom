@@ -34,10 +34,10 @@ export default {
       :modules="modules"
       class="mySwiper"
     >
-      <swiper-slide><img src="/photo/Mousse_cake_Rocher1.jpg" alt="" /></swiper-slide>
-      <swiper-slide><img src="../../public\tinified\freepik2.jpeg" alt="" /></swiper-slide>
-      <swiper-slide><img src="../../public\tinified\freepik3.jpeg" alt="" /></swiper-slide>
-      <swiper-slide><img src="../../public\tinified\freepik4.jpeg" alt="" /></swiper-slide>
+      <swiper-slide class="justify-items-center"><img class="w-10/100" src="../../public\main\freepik.jpeg" alt="" /></swiper-slide>
+      <swiper-slide class="justify-items-center"><img class="w-10/100" src="../..\public\main\freepik2.jpeg" alt="" /></swiper-slide>
+      <swiper-slide class="justify-items-center"><img class="w-4/5" src="../../public\tinified\freepik3.jpeg" alt="" /></swiper-slide>
+      <swiper-slide class="justify-items-center"><img class="w-4/5" src="../../public\tinified\freepik4.jpeg" alt="" /></swiper-slide>
     </swiper>
   </div>
 </template>

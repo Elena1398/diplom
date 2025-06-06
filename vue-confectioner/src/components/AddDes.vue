@@ -1,16 +1,34 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useRoute } from 'vue-router'
+const route = useRoute()
+
+const dessertId = route.query.id
 
 const router = useRouter()
-
 const image = ref(null)
 const imagePreview = ref(null)
 const showAlert = ref(false)
 const alertMessage = ref('')
 const fileCover = ref(null)
 const isSubmitting = ref(false)
+const isCakeCategory = computed(() => dessert.value.categoryId === 1)
+const showModal = ref(false)
+const modalMessage = ref('')
+const isSuccess = ref(true) // для стилизации (успех или ошибка)
+
+const showModalMessage = (message, success = true) => {
+  modalMessage.value = message
+  isSuccess.value = success
+  showModal.value = true
+}
+
+const handleModalClose = () => {
+  showModal.value = false
+  router.push('/') // Переход после закрытия модалки
+}
 
 const dessert = ref({
   title: '',
@@ -102,31 +120,29 @@ const saveDessert = async () => {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    if (image.value) {
-      if (fileCover.value) {
-        // Пользователь загрузил новое изображение — используем имя файла
-        dessert.value.photo = fileCover.value.name
-      } else if (typeof dessert.value.photo === 'string') {
-        // Убираем лишние пути
-        dessert.value.photo = dessert.value.photo.split('\\').pop() // Оставляем только имя файла
-      }
-
+    if (image.value && fileCover.value) {
+      dessert.value.photo = fileCover.value.name
+    } else if (typeof dessert.value.photo === 'string') {
+      dessert.value.photo = dessert.value.photo.split('\\').pop()
+    }
+    if (isEdit.value) {
+      await axios.put(`http://localhost:8080/apis/adddesserts/${dessertId}`, dessert.value, {
+        headers: { 'Content-Type': 'application/json' }
+      })
+      showModalMessage('Десерт успешно обновлён!', true) // ✅ правильно
+    } else {
       await axios.post('http://localhost:8080/apis/adddesserts', dessert.value, {
         headers: { 'Content-Type': 'application/json' }
       })
-
-      alert('Десерт успешно добавлен! Перенаправляем в каталог...')
-      setTimeout(() => {
-        router.push('/')
-      }, 1000) // можно 2000–3000 мс
+      showModalMessage('Десерт успешно добавлен!', true) // ✅ правильно
     }
   } catch (error) {
     if (error.response) {
-      alertMessage.value = `Ошибка при добавлении десерта: ${error.response.data.message || 'Неизвестная ошибка'} (${error.response.data.details || 'Нет деталей'})`
+      showModalMessage(`Ошибка: ${error.response?.data?.message || error.message}`, false)
     } else if (error.request) {
-      alertMessage.value = 'Нет ответа от сервера.'
+      showModalMessage('Нет ответа от сервера.')
     } else {
-      alertMessage.value = `Ошибка при отправке запроса: ${error.message}`
+      showModalMessage(`Ошибка при отправке запроса: ${error.message}`)
     }
     showAlert.value = true
     console.error(error)
@@ -136,21 +152,52 @@ const saveDessert = async () => {
 }
 
 const updatePrice = () => {
-  const weight = Number(dessert.value.weight);
+  const weight = Number(dessert.value.weight)
   if (weight === 1.0) {
-    dessert.value.price = 2500; // первая цена из price_list для 1.0
+    dessert.value.price = 2500 // первая цена из price_list для 1.0
   } else if (weight === 2.0) {
-    dessert.value.price = 4000; // первая цена из price_list для 2.0
+    dessert.value.price = 4000 // первая цена из price_list для 2.0
   } else {
-    dessert.value.price = null;
+    dessert.value.price = null
   }
-};
+}
 
+const isEdit = ref(false)
+
+onMounted(async () => {
+  if (dessertId) {
+    isEdit.value = true
+    try {
+      const { data } = await axios.get(`http://localhost:8080/apis/deserts/${dessertId}`)
+      console.log('Загруженные данные десерта:', data) // проверь, что есть categoryId
+      dessert.value = {
+        title: data.title || '',
+        price: data.price || null,
+        photo: data.photo || '',
+        weight: data.weight || null,
+        protein: data.protein || null,
+        fast: data.fast || null,
+        carbohydrates: data.carbohydrates || null,
+        calories: data.calories || null,
+        description: data.description || '',
+        structure: data.ingredients || '', // 👈 тут главное!
+        categoryId: data.categoryid || null,
+        tasteId: data.tasteId || null // если есть
+      }
+
+      imagePreview.value = `/photo/${data.photo}`
+    } catch (error) {
+      console.error('Ошибка загрузки десерта:', error)
+    }
+  }
+})
 </script>
 
 <template>
-  <div class="m-10">
-    <h2 class="text-3xl font-mono mb-6">Добавить новый десерт</h2>
+  <div class="py-16 mb-40 m-10">
+    <h2 class="text-3xl font-mono mb-6">
+      {{ isEdit ? 'Редактировать десерт' : 'Добавить новый десерт' }}
+    </h2>
 
     <div class="flex flex-col md:flex-row gap-10">
       <!-- Фото -->
@@ -176,7 +223,7 @@ const updatePrice = () => {
       </div>
 
       <!-- Форма -->
-      <div class="flex-1">
+      <div class="bg-amber-200/50 rounded-2xl p-5 flex-1">
         <form @submit.prevent="saveDessert" class="space-y-6">
           <input
             placeholder="Название"
@@ -188,10 +235,12 @@ const updatePrice = () => {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <select
+              v-model="dessert.tasteId"
               class="border border-slate-300 rounded-md w-full p-2 outline-none font-mono"
               @change="onChangeTastes"
+              placeholder="Название"
             >
-              <option value="">Выберите вкус</option>
+              <option disabled value="">Выберите вкус</option>
               <option value="1">Клубника</option>
               <option value="2">Манго</option>
               <option value="3">Шоколад</option>
@@ -201,10 +250,11 @@ const updatePrice = () => {
             </select>
 
             <select
+              v-model="dessert.categoryId"
               class="border border-slate-300 rounded-md w-full p-2 outline-none font-mono"
               @change="onChangeSelect"
             >
-              <option value="">Выберите категорию</option>
+              <option disabled value="">Выберите категорию</option>
               <option value="1">Торт</option>
               <option value="2">Пирожные</option>
               <option value="3">Выпечка</option>
@@ -213,30 +263,39 @@ const updatePrice = () => {
             </select>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid grid-cols-2 gap-4">
-              <select
-                v-model="dessert.weight"
-                class="w-full border p-2 rounded"
-                @change="updatePrice"
-              >
-                <option disabled value="">Выберите вес</option>
-                <option value="1.0">1.0 кг</option>
-                <option value="2.0">2.0 кг</option>
-              </select>
+          <!-- Если Торт -->
+          <div v-if="isCakeCategory" class="grid grid-cols-2 gap-4">
+            <select
+              v-model="dessert.weight"
+              class="w-full border p-2 rounded"
+              @change="updatePrice"
+            >
+              <option disabled value="">Выберите вес</option>
+              <option value="1.0">1.0 кг</option>
+              <option value="2.0">2.0 кг</option>
+            </select>
 
-              <input
-                placeholder="Цена (₽)"
-                v-model="dessert.price"
-                type="number"
-                class="w-full border p-2 rounded"
-                readonly
-              />
-            </div>
+            <input
+              placeholder="Цена (₽)"
+              v-model="dessert.price"
+              type="number"
+              class="w-full border p-2 rounded"
+              readonly
+            />
+          </div>
 
-            <input 
+          <!-- Если НЕ торт -->
+          <div v-else class="grid grid-cols-2 gap-4">
+            <input
               placeholder="Вес (г)"
               v-model="dessert.weight"
+              type="number"
+              class="w-full border p-2 rounded"
+            />
+
+            <input
+              placeholder="Цена (₽)"
+              v-model="dessert.price"
               type="number"
               class="w-full border p-2 rounded"
             />
@@ -291,10 +350,25 @@ const updatePrice = () => {
             :disabled="isSubmitting"
             class="bg-lilac text-white px-4 py-2 rounded hover:bg-purple-600 transition"
           >
-            Добавить товар
+            {{ isEdit ? 'Сохранить изменения' : 'Добавить десерт' }}
           </button>
           <div v-if="showAlert" class="text-red-600 mt-2">{{ alertMessage }}</div>
         </form>
+        <!-- Модальное окно -->
+        <div
+          v-if="showModal"
+          class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+        >
+          <div class="bg-white rounded-xl p-6 shadow-xl max-w-md w-full text-center">
+            <p class="text-lg font-semibold mb-4">{{ modalMessage }}</p>
+            <button
+              @click="handleModalClose"
+              class="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+            >
+              OK
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

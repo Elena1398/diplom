@@ -230,7 +230,7 @@ console.log('CartItem props:', props)
 </script>
 
 <template>
-  <div class="flex items-center border border-slate-300 p-4 rounded-xl gap-4 shadow-sm mt-4">
+  <div class="flex items-center border border-slate-300 p-4 rounded-xl bg-white gap-4 shadow-sm mt-4">
     <router-link :to="{ name: 'DecertPage', params: { id: props.code } }">
       <img :src="imageUrl" alt="dessert" class="w-40 h-32 object-cover rounded-lg" />
     </router-link>

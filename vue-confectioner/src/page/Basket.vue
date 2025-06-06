@@ -82,7 +82,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-16">
+  <div class="py-16 mb-40 p-16">
     <div class="flex">
       <div class="w-1/2 pr-4 mb-5">
         <h2 class="text-3xl mb-8 font-mono">Корзина</h2>

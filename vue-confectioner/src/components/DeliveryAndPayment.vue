@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 import { useAuthStore } from '@/stores/auth'
+import Maps from './Map.vue'
 
 const auth = useAuthStore()
 
@@ -18,17 +19,13 @@ onMounted(() => {
     easing: 'ease-in-out' // Плавность анимации
   })
 })
-
-import Maps from './Map.vue'
-
-
 </script>
 
 <template>
   <div>
     <!-- Заголовок страницы -->
     <div
-      class="bg-gradient-to-b from-pink-950/50 mx-auto w-full h-64 flex items-center justify-center"
+      class="bg-gradient-to-b from-orange-400/50 mx-auto w-full h-64 flex items-center justify-center"
       data-aos="fade-down"
     >
       <h1 class="text-6xl text-white font-serif text-center mb-8 p-4">Доставка и Оплата</h1>
@@ -37,7 +34,7 @@ import Maps from './Map.vue'
     <section class="m-40 mt-10">
       <!-- 01 -->
       <div class="flex items-center space-x-6 relative" data-aos="fade-up">
-        <h1 class="text-9xl font-serif text-gray-300/100 mb-8 p-4" style="font-size: 18rem">01</h1>
+        <h1 class="text-9xl font-serif text-light_orange mb-8 p-4" style="font-size: 18rem">01</h1>
         <div class="absolute left-10 pt-10 p-1">
           <h2 class="text-2xl">ВЫБЕРИТЕ ТОВАРЫ</h2>
           <p class="text-lg text-gray-600">
@@ -48,7 +45,7 @@ import Maps from './Map.vue'
 
       <!-- 02 -->
       <div class="flex items-center space-x-6 relative justify-end" data-aos="fade-left">
-        <h1 class="text-9xl font-serif text-gray-300/100 mb-8 p-4" style="font-size: 18rem">02</h1>
+        <h1 class="text-9xl font-serif text-light_orange mb-8 p-4" style="font-size: 18rem">02</h1>
         <div class="absolute right-10 pt-10 p-5 text-right">
           <h2 class="text-2xl">ОФОРМИТЕ ЗАКАЗ</h2>
           <p class="text-lg text-gray-600">
@@ -59,7 +56,7 @@ import Maps from './Map.vue'
 
       <!-- 03 -->
       <div class="flex items-center space-x-6 relative" data-aos="fade-up">
-        <h1 class="text-9xl font-serif text-gray-300/100 mb-8 p-4" style="font-size: 18rem">03</h1>
+        <h1 class="text-9xl font-serif text-light_orange mb-8 p-4" style="font-size: 18rem">03</h1>
         <div class="absolute left-10 pt-10 p-1">
           <h2 class="text-2xl">ОЖИДАЙТЕ ОТВЕТ</h2>
           <p class="text-lg text-gray-600">
@@ -117,7 +114,8 @@ import Maps from './Map.vue'
         </div>
       </div>
     </section>
-
- <Maps />
+    <div class="m-40 mt-10">
+      <Maps />
+    </div>
   </div>
 </template>

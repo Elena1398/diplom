@@ -3,6 +3,7 @@ import { useCartStore } from '@/stores/baskets'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { computed, reactive, watch } from 'vue'
+import Maps from './Map.vue'
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
@@ -158,7 +159,7 @@ const formatPrice = (price) => {
 </script>
 
 <template>
-  <div class="p-8 max-w-2xl mx-auto">
+  <div class="mb-40 mt-20 p-8 max-w-2xl mx-auto">
     <h1 class="text-3xl font-bold mb-6 font-mono">Оформление заказа</h1>
     <form @submit.prevent="submitOrder" class="space-y-6">
       <!-- Date -->
@@ -216,6 +217,11 @@ const formatPrice = (price) => {
           >
             Самовывоз
           </div>
+        </div>
+
+        <!-- Карта только при выборе самовывоза -->
+        <div v-if="order.deliveryMethod === 'pickup'" class="mt-4">
+          <Maps />
         </div>
       </div>
 
@@ -304,13 +310,13 @@ const formatPrice = (price) => {
       </div>
 
       <!-- Summary -->
-      <div class="bg-gray-100 p-6 rounded-xl">
+      <div class="bg-amber-200/50 p-6 rounded-xl">
         <div class="flex justify-between mb-2">
           <span>Сумма заказа:</span>
           <b>{{ formatPrice(totalPrice) }}</b>
         </div>
         <div class="flex justify-between mb-2">
-          <span>Скидка:</span>
+          <span>Скидка 15%:</span>
           <b>-{{ formatPrice(vatPrice) }}</b>
         </div>
         <div class="flex justify-between text-xl font-bold">

@@ -15,25 +15,20 @@ const adress = ref('')
 const emailOrPhoneError = ref(false)
 const role = ref('')
 
-onMounted(() => {
-  role.value = localStorage.getItem('role') || ''
-})
+// Управление модалкой
+const showModal = ref(false)
+const modalMessage = ref('')
 
 onMounted(async () => {
-  auth.loadUserFromLocalStorage()
+  await auth.loadUserFromLocalStorage()
 
-  const userId = localStorage.getItem('userId')
-  const role = localStorage.getItem('role')
-  
-
-  console.log('userId:', userId)
-  console.log('role:', role)
+  const userId = auth.user?.admin_id || auth.user?.cus_id
+  const role = auth.user?.role
 
   if (!userId || !role) return
 
   try {
     let res
-
     if (role === 'admin') {
       res = await axios.get(`http://localhost:8080/apis/admin/${userId}`)
     } else {
@@ -41,9 +36,7 @@ onMounted(async () => {
     }
 
     const user = res.data
-    console.log('Загружен пользователь:', user)
 
-    // Назначение значений
     surname.value = user.surname || user.cus_surname || user.surname_admin || ''
     name.value = user.name || user.cus_name || user.firstname_admin || ''
     patronymic.value = user.patronymic || user.cus_patronymic || user.patronymic_admin || ''
@@ -51,11 +44,12 @@ onMounted(async () => {
     email.value = user.email || user.cus_email || ''
     login.value = user.login || ''
     adress.value = user.address || user.cus_adress || ''
-    
+    role.value = role
   } catch (err) {
     console.error('Ошибка загрузки данных пользователя:', err)
   }
 })
+
 
 const saveChanges = async () => {
   const userId = localStorage.getItem('userId')
@@ -75,8 +69,7 @@ const saveChanges = async () => {
         patronymic: patronymic.value,
         birthday: birthday.value,
         email: email.value,
-        login: login.value,
-        
+        login: login.value
       })
     } else {
       await axios.put(`http://localhost:8080/apis/customer/${userId}`, {
@@ -90,20 +83,37 @@ const saveChanges = async () => {
       })
     }
 
-    alert('Данные успешно сохранены!')
+    auth.user = {
+      ...auth.user,
+      surname: surname.value,
+      name: name.value,
+      patronymic: patronymic.value,
+      birthday: birthday.value,
+      email: email.value,
+      login: login.value,
+      adress: adress.value
+    }
+
+    modalMessage.value = 'Данные успешно сохранены!'
+    showModal.value = true
+
   } catch (err) {
     console.error('Ошибка при сохранении:', err)
-    alert('Произошла ошибка при сохранении данных.')
+    modalMessage.value = 'Произошла ошибка при сохранении данных.'
+    showModal.value = true
   }
 }
 
-localStorage.setItem('userId', '1')
-localStorage.setItem('role', 'admin')
+
+
+const closeModal = () => {
+  showModal.value = false
+}
 </script>
 
 <template>
-  <div class="max-w-lg mx-auto p-10">
-    <h1 class="font-mono text-center font-bold uppercase mb-4 text-xl">Профиля</h1>
+  <div class="bg-amber-200/50 rounded-lg mt-20 py-16 mb-40 max-w-lg mx-auto p-10">
+    <h1 class="font-mono text-center font-bold uppercase mb-4 text-xl">Профиль</h1>
     <form action="">
       <div class="mb-6">
         <label class="block font-mono mb-2">Фамилия:</label>
@@ -191,5 +201,19 @@ localStorage.setItem('role', 'admin')
     >
       Редактировать
     </button>
+  </div>
+  <div
+    v-if="showModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
+    <div class="bg-white p-6 rounded-lg max-w-sm w-full text-center font-mono shadow-lg">
+      <p class="mb-6 text-lg">{{ modalMessage }}</p>
+      <button
+        @click="closeModal"
+        class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
+      >
+        ОК
+      </button>
+    </div>
   </div>
 </template>

@@ -13,7 +13,7 @@ const emit = defineEmits(['addToFavorite', 'addToCard'])
 </script>
 
 <template>
-  <div class="flex-1">
+  <div class="py-16 mb-40 flex-1">
     <div v-auto-animate class="grid grid-cols-4 gap-5">
       <Cart
         v-for="item in props.items"

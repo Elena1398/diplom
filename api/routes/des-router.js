@@ -31,7 +31,7 @@ router.post("/adddesserts/upload", upload.single("image"), (req, res) => {
   const filePath = `..\\..\\photo\\${req.file.filename}`;
   res.json({ filePath });
 });
-
+router.put("/adddesserts/:id", DesControllers.updateDessert);
 
 router.post("/login", UsControllers.loginUser);
 router.post("/registration", UsControllers.registrationUser);
@@ -46,8 +46,10 @@ router.get("/my-orders/:id", UsControllers.getOrdersByCustomer);
 
 router.get("/des", DesControllers.getDes);
 router.get("/desert/:id", DesControllers.getDesert);
+router.get("/deserts/:id", DesControllers.getDeserts);
 router.get("/desserts/:id/prices", DesControllers.getPrices);
 router.get("/price_list", DesControllers.getPriceList);
+router.delete("/desert/:id", DesControllers.deleteDessert);
 
 router.get("/favourites", DesControllers.getFavorites);
 // router.get('/favourites/:id', DesControllers.getFavoritesId)

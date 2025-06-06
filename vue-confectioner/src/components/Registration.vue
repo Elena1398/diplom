@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useCartStore } from '@/stores/baskets'  // если есть, чтобы обновить корзину после
+import { useCartStore } from '@/stores/baskets' // если есть, чтобы обновить корзину после
 
 const surname = ref('')
 const name = ref('')
@@ -20,7 +20,9 @@ const cartStore = useCartStore()
 const router = useRouter()
 
 const passwordMismatchError = computed(() => passwords.value !== repepassword.value)
-const emailOrPhoneError = computed(() => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value))
+const emailOrPhoneError = computed(() => {
+  return email.value !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)
+})
 
 async function syncGuestCartToUser(customersId) {
   const guestBaskets = JSON.parse(localStorage.getItem('baskets') || '[]')
@@ -47,16 +49,25 @@ async function syncGuestCartToUser(customersId) {
   }
 
   localStorage.removeItem('baskets')
-  guestBaskets.forEach(des_id => localStorage.removeItem(`cart-item-${des_id}`))
+  guestBaskets.forEach((des_id) => localStorage.removeItem(`cart-item-${des_id}`))
 }
+const personalDataConsent = ref(false)
+const showConsentModal = ref(false)
+
 
 const handleRegis = async () => {
   if (passwordMismatchError.value) {
     alert('Пароли не совпадают')
     return
   }
+
   if (emailOrPhoneError.value) {
     alert('Неверный формат email')
+    return
+  }
+
+  if (!personalDataConsent.value) {
+    showConsentModal.value = true
     return
   }
 
@@ -74,15 +85,13 @@ const handleRegis = async () => {
 
     const response = await axios.post('http://localhost:8080/apis/registration', userData)
 
-    // Предполагаем, что в ответе пришёл созданный пользователь:
     const user = response.data.cus
     localStorage.setItem('customersId', user.cus_id)
 
-    // Поднимаем корзину из localStorage на сервер для нового пользователя
     await syncGuestCartToUser(user.cus_id)
 
     auth.setUser(user)
-    await cartStore.loadCart() // обновляем корзину из сервера, если используете стор корзины
+    await cartStore.loadCart()
 
     alert('Регистрация успешна!')
     router.push('/')
@@ -97,10 +106,8 @@ onMounted(() => {
 })
 </script>
 
-
-
 <template>
-  <div class="max-w-lg mx-auto p-10">
+  <div class="bg-white rounded-2xl mt-20 py-16 mb-40 max-w-lg mx-auto p-10">
     <h1 class="font-mono text-center font-bold uppercase mb-4 text-xl">Регистрация</h1>
     <form @submit.prevent="handleRegis">
       <div class="mb-6">
@@ -210,6 +217,31 @@ onMounted(() => {
           required
           class="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:border-purple-400 transition duration-300"
         />
+      </div>
+      <!-- Чекбокс согласия -->
+      <div class="mb-6">
+        <label class="inline-flex items-center">
+          <input type="checkbox" v-model="personalDataConsent" class="mr-2" />
+          <span class="font-mono">Я соглашаюсь на обработку персональных данных</span>
+        </label>
+      </div>
+
+      <!-- Модальное окно -->
+      <div
+        v-if="showConsentModal"
+        class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+      >
+        <div class="bg-white rounded-lg p-6 max-w-sm text-center shadow-lg">
+          <p class="mb-4 font-mono text-red-600">
+            Пожалуйста, подтвердите согласие на обработку персональных данных.
+          </p>
+          <button
+            @click="showConsentModal = false"
+            class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+          >
+            Понятно
+          </button>
+        </div>
       </div>
 
       <button
